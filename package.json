@@ -1,0 +1,25 @@
+{
+  "name": "provena-platform-v2",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:all": "bash ./scripts/dev.sh",
+    "compose:up": "bash ./scripts/compose-up.sh",
+    "dev:api": "pnpm --filter @provena/api dev",
+    "dev:worker": "pnpm --filter @provena/worker dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @provena/db db:generate",
+    "db:migrate": "pnpm --filter @provena/db db:migrate",
+    "db:push": "pnpm --filter @provena/db db:push"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
+  }
+}
