@@ -30,6 +30,12 @@ pnpm install
 pnpm dev
 ```
 
+or use the helper script:
+
+```bash
+pnpm dev:all
+```
+
 You can also run specific apps:
 
 ```bash
@@ -73,6 +79,20 @@ Run:
 cp .env.dist .env
 docker compose up -d
 ```
+
+or use:
+
+```bash
+pnpm compose:up
+```
+
+## CI
+
+GitHub Actions workflow is included at `.github/workflows/ci.yml` and validates:
+
+- install
+- typecheck
+- build
 
 ## Notes on storage backend
 

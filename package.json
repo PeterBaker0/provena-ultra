@@ -6,6 +6,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "dev:all": "bash ./scripts/dev.sh",
+    "compose:up": "bash ./scripts/compose-up.sh",
     "dev:api": "pnpm --filter @provena/api dev",
     "dev:worker": "pnpm --filter @provena/worker dev",
     "typecheck": "turbo run typecheck",
