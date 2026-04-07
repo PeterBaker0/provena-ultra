@@ -1,0 +1,16 @@
+-r requirements.txt
+-r job_requirements/dev.txt
+
+
+# pytest
+pytest
+
+# pytest plugins
+pytest-dotenv
+pytest-depends
+#pytest-docker==1.0.1
+pytest-docker==2.0.1
+pytest-mock
+pytest-asyncio
+
+mypy

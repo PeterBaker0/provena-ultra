@@ -1,0 +1,10 @@
+requests
+pydantic==1.10.17
+typer[all]
+
+# Shared interfaces
+../../utilities/packages/python/provena-interfaces
+# Keycloak utilities
+../../utilities/packages/python/keycloak-utils
+# Environment manager
+../tooling-environment-manager

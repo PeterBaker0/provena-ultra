@@ -1,0 +1,34 @@
+fastapi==0.88.0
+uvicorn
+requests
+python-jose
+python-multipart
+setuptools
+boto3
+jsonschema
+rdflib==7.1.4
+httpx==0.27.2
+mangum
+aws-secretsmanager-caching
+pydantic==1.10.17
+cachetools
+aiocache
+types-cachetools
+prov
+neo4j
+networkx
+python-dotenv
+sentry-sdk[fastapi]
+mypy-boto3-kms
+python-docx==1.1.2
+
+
+# requires GITHUB_TOKEN as environment variable 
+# Keycloak auth test package
+git+https://${GITHUB_TOKEN}@github.com/${REPO_STRING}@${BRANCH_NAME}#egg=fast-api-keycloak-auth&subdirectory=utilities/packages/python/fast-api-keycloak-auth
+
+# Shared interfaces
+git+https://${GITHUB_TOKEN}@github.com/${REPO_STRING}@${BRANCH_NAME}#egg=provena-interfaces&subdirectory=utilities/packages/python/provena-interfaces
+
+# Provena Shared Functionality
+git+https://${GITHUB_TOKEN}@github.com/${REPO_STRING}@${BRANCH_NAME}#egg=provena-shared-functionality&subdirectory=utilities/packages/python/provena-shared-functionality
