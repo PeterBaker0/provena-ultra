@@ -1,14 +1,23 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "dist/types",
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "types": ["vite/client"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "references": [{ "path": "../../packages/ui-shared" }]
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "types": ["vite/client", "vite-plugin-svgr/client"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "esModuleInterop": false,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": false,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "baseUrl": "./src",
+        "rootDir": "./src"
+    },
+    "include": ["src"]
 }

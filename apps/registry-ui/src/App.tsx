@@ -1,16 +1,29 @@
-import { endpointKeys, resolveUiEnvironment } from "@provena/ui-shared";
+import { ReactKeycloakProvider } from "@react-keycloak/web";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { observer } from "mobx-react-lite";
+import { keycloak } from "react-libs";
+import RoutesAndLayout from "./layout/RoutesAndLayout";
 
-const env = resolveUiEnvironment(import.meta.env as unknown as Record<string, unknown>);
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
 
-export const App = () => (
-  <main style={{ fontFamily: "Inter, system-ui, sans-serif", padding: "2rem" }}>
-    <h1>Provena Registry UI (v2 shell)</h1>
-    <p>This shell preserves the legacy VITE environment contract.</p>
-    <ul>
-      <li>Registry API: {env[endpointKeys.registry]}</li>
-      <li>Auth API: {env[endpointKeys.auth]}</li>
-      <li>Search API: {env[endpointKeys.search]}</li>
-      <li>Jobs API: {env[endpointKeys.jobs]}</li>
-    </ul>
-  </main>
-);
+function App() {
+  return (
+    <div>
+      <QueryClientProvider client={queryClient}>
+        <ReactKeycloakProvider authClient={keycloak}>
+          <RoutesAndLayout />
+        </ReactKeycloakProvider>
+      </QueryClientProvider>
+    </div>
+  );
+}
+
+export default observer(App);
