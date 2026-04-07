@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LineageNodeSchema } from "./common.js";
+import { LineageNodeSchema } from "./common";
 
 export const LineageEdgeSchema = z.object({
   from: z.string(),

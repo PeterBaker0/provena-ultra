@@ -1,34 +1,57 @@
 import { z } from "zod";
 
-export const statusSchema = z.object({
-  success: z.boolean(),
+export const StatusSchema = z.object({
+  status: z.boolean().default(true),
   details: z.string().optional(),
 });
+export const statusSchema = StatusSchema;
+export type Status = z.infer<typeof StatusSchema>;
 
-export type Status = z.infer<typeof statusSchema>;
-
-export const userSchema = z.object({
-  username: z.string(),
-  roles: z.array(z.string()),
-  rawToken: z.string().optional(),
+export const ApiResponseMetaSchema = z.object({
+  request_id: z.string().optional(),
+  generated_at: z.string().optional(),
 });
+export type ApiResponseMeta = z.infer<typeof ApiResponseMetaSchema>;
 
-export type User = z.infer<typeof userSchema>;
+export const UserSchema = z.object({
+  username: z.string(),
+  roles: z.array(z.string()).default([]),
+  raw_token: z.string().optional(),
+});
+export const userSchema = UserSchema;
+export type User = z.infer<typeof UserSchema>;
 
-export const paginationSchema = z.object({
+export const PageRequestSchema = z.object({
   limit: z.number().int().positive().default(50),
   offset: z.number().int().min(0).default(0),
 });
 
-export const paginatedRequestSchema = z.object({
-  pagination: paginationSchema.optional(),
-  query: z.record(z.unknown()).optional(),
+export const PaginatedRequestSchema = z.object({
+  pagination: PageRequestSchema.optional(),
+  query: z.record(z.string(), z.unknown()).optional(),
 });
+export const paginationSchema = PageRequestSchema;
+export const paginatedRequestSchema = PaginatedRequestSchema;
+export type PaginatedRequest = z.infer<typeof PaginatedRequestSchema>;
+
+export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(recordSchema: T) =>
+  z.object({
+    status: z.boolean().default(true),
+    count: z.number().int().nonnegative(),
+    records: z.array(recordSchema),
+  });
 
 export const paginatedResponseSchema = z.object({
+  status: z.boolean().default(true),
   count: z.number().int().nonnegative(),
   records: z.array(z.unknown()),
 });
 
-export type PaginatedRequest = z.infer<typeof paginatedRequestSchema>;
 export type PaginatedResponse = z.infer<typeof paginatedResponseSchema>;
+
+export const LineageNodeSchema = z.object({
+  id: z.string(),
+  category: z.string(),
+  subtype: z.string(),
+  display_name: z.string(),
+});

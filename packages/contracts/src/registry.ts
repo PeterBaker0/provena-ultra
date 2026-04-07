@@ -33,6 +33,22 @@ export const RegistryItemSchema = z.object({
   updated_at: z.string(),
 });
 
+export const GroupAccessSchema = z.object({
+  group_name: z.string(),
+  roles: z.array(z.string()).default([]),
+});
+
+export const AccessSettingsSchema = z.object({
+  open_access: z.boolean().default(false),
+  groups: z.array(GroupAccessSchema).default([]),
+});
+
+export const DomainInfoSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  data: z.record(z.string(), z.unknown()).default({}),
+});
+
 export const RegistryFetchResponseSchema = z.object({
   item: RegistryItemSchema.nullable(),
   status: StatusSchema,
@@ -89,3 +105,6 @@ export type RegistryMutationResponse = z.infer<typeof RegistryMutationResponseSc
 export type DatasetReleaseRequest = z.infer<typeof DatasetReleaseRequestSchema>;
 export type DatasetReleaseActionRequest = z.infer<typeof DatasetReleaseActionRequestSchema>;
 export type DatasetReleaseResponse = z.infer<typeof DatasetReleaseResponseSchema>;
+export type GroupAccess = z.infer<typeof GroupAccessSchema>;
+export type AccessSettings = z.infer<typeof AccessSettingsSchema>;
+export type DomainInfo = z.infer<typeof DomainInfoSchema>;
