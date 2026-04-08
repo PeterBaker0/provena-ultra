@@ -1,0 +1,1032 @@
+from config import Config
+import requests
+import json
+from helpers.auth_helpers import evaluate_user_access
+from helpers.keycloak_helpers import get_service_token
+from aws_secretsmanager_caching import SecretCache  # type: ignore
+from fastapi import HTTPException
+from ProvenaInterfaces.RegistryAPI import *
+from ProvenaInterfaces.RegistryModels import ReleasedStatus
+from ProvenaInterfaces.DataStoreAPI import *
+from typing import Dict
+from dependencies.dependencies import User
+from helpers.util import py_to_dict
+from dependencies.dependencies import get_user_context_header
+
+
+def generate_service_token_for_registry_api(secret_cache: SecretCache, config: Config) -> str:
+    # get service token - this includes special roles which the registry expects
+    try:
+        token = get_service_token(
+            secret_cache=secret_cache,
+            config=config
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate service token - error: {e}. Contact an administrator."
+        )
+
+    return token
+
+
+def validate_dataset_in_registry(collection_format: CollectionFormat, user: User, config: Config) -> Optional[str]:
+    """
+    validate_dataset_in_registry 
+    Parameters
+    ----------
+    collection_format: CollectionFormat
+        The data to validate - need to wrap in DatasetDomainInfo
+    config : Config
+        API config
+    Returns
+    -------
+    """
+    # wrap the payload
+    try:
+        payload = DatasetDomainInfo(
+            display_name=collection_format.dataset_info.name,
+            user_metadata=collection_format.dataset_info.user_metadata,
+            collection_format=collection_format,
+            s3=S3Location(bucket_name="fake", path="fake", s3_uri="fake"),
+            release_status=ReleasedStatus.NOT_RELEASED,  # dummy value
+            # dont use fake, must exactly match
+            access_info_uri=collection_format.dataset_info.access_info.uri,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to wrap the collection format as a DatasetDomainInfo, error: {e}."
+        )
+
+    # endpoint
+    postfix = "/registry/entity/dataset/validate"
+    validate_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    # make the seed request - pass through user token
+    token = user.access_token
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    try:
+        response = requests.post(
+            url=validate_endpoint,
+            json=json.loads(payload.json(exclude_none=True)),
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to call validation endpoint in registry before seeding. Error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset validation failed, received not authorised. Status code: {response.status_code}. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset validation process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the status response
+    try:
+        status_response = StatusResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as a Status Response, error: {e}."
+        )
+
+    # return either the validation issue or None if OK
+    if not status_response.status.success:
+        return status_response.status.details
+    else:
+        return None
+
+
+def seed_dataset_in_registry(user_cipher: str, secret_cache: SecretCache, config: Config) -> str:
+    """
+    seed_dataset_in_registry 
+
+    Acts in the data-store-api service role to seed a new dataset registry entity.
+
+    Returns the ID of the seeded item.
+
+    Parameters
+    ----------
+    secret_cache : SecretCache
+        The secret cache to use to pull the secret info
+    config : Config
+        API config
+
+    Returns
+    -------
+    str
+        The handle ID of the seeded item in the registry
+
+    """
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    # endpoint
+    postfix = "/registry/entity/dataset/proxy/seed"
+    seed_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    # make the seed request
+
+    # auth header
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    # proxy header
+    proxy_headers = get_user_context_header(
+        user_cipher=user_cipher, config=config)
+
+    # merge
+    headers.update(proxy_headers)
+
+    try:
+        response = requests.post(
+            url=seed_endpoint,
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Minting dataset request failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset minting failed, not authorised. Status code: {response.status_code}. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset minting process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the mint response
+    try:
+        seed_response = GenericSeedResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as a seed item, error: {e}."
+        )
+
+    # parsed succesfully
+    if not seed_response.status.success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with status success False during dataset mint. Details: {seed_response.status.details}."
+        )
+
+    # all is well - get the ID
+    if seed_response.seeded_item is None:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with status success but didn't include the seeded item. Contact an administrator."
+        )
+
+    return seed_response.seeded_item.id
+
+
+def update_dataset_in_registry(
+    user_cipher: str,
+    domain_info: DatasetDomainInfo,
+    id: str,
+    secret_cache: SecretCache,
+    config: Config,
+    reason: Optional[str] = None,
+    bypass_item_lock: bool = False,
+    exclude_history_update: bool = False,
+    manual_grant: bool = False,
+) -> UpdateResponse:
+    """
+
+    Runs a registry proxy update operation with the specified new domain info
+    etc.
+
+    Note that if updating from seed -> complete item, the registry will respond
+    incl. a session ID for the spinoff creation task - this is relayed.
+
+    Parameters
+    ----------
+    user_cipher: str
+        The encrypted user context info to include in header for proxy route
+    domain_info : DatasetDomainInfo
+        The new domain info
+    id : str
+        Item id
+    secret_cache : SecretCache
+        AWS secret cache
+    reason : str
+        Justification for update
+    bypass_item_lock : bool, optional
+        For sending a message to the registry API to bypass the item lock. Only
+        ever used for updating the release information of a dataset, by default
+        False Desire to be able to request release for a locked dataset.
+    exclude_history_update: bool , optional
+        For excluding the history update. This should be true iff informaiton
+        being updated is not user editable information and therefore should not
+        constitue a new (loose) "version" for the user to view. This is set to
+        true if release information is updating during a release process.
+    manual_grant: bool
+        If the authorised client (i.e. the data store API / prov store API) has
+        additional info about the user/context which means the normal auth
+        checks should be bypassed, this flag can be used
+    config : Config
+        The config
+
+    Returns
+    -------
+    UpdateResponse
+        Response incl status and optionally the session id
+
+    Raises
+    ------
+    HTTPException
+        400/401/500 depending on reason
+    """
+
+    if not exclude_history_update:
+        assert reason, "Must provide a reason for the update to this function if the history entry is being created"
+
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    # endpoint
+    postfix = "/registry/entity/dataset/proxy/update"
+    update_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+    json_payload = py_to_dict(domain_info)
+    params = {
+        'id': id,
+        'reason': reason,
+        'bypass_item_lock': str(bypass_item_lock),
+        "exclude_history_update": str(exclude_history_update),
+        'manual_grant': str(manual_grant)
+    }
+
+    # make the seed request
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    context_headers = get_user_context_header(
+        user_cipher=user_cipher, config=config)
+
+    headers.update(context_headers)
+
+    try:
+        response = requests.put(
+            url=update_endpoint,
+            json=json_payload,
+            params=params,
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Updating dataset failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset metadata update failed, not authorised. Status code: {response.status_code}. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset update process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the update response
+    try:
+        update_response = UpdateResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as a status response, error: {e}."
+        )
+
+    # parsed succesfully
+    if not update_response.status.success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with status success False during dataset update. Details: {update_response.status.details}."
+        )
+
+    return update_response
+
+
+def revert_dataset_in_registry(user_cipher: str, revert_request: ItemRevertRequest, secret_cache: SecretCache, config: Config) -> None:
+    """
+
+    Reverts dataset using the registry proxy revert operation.
+
+    Parameters
+    ----------
+    user_cipher : str
+        The encrypted user info
+    revert_request : ItemRevertRequest
+        The full request
+    secret_cache : SecretCache
+        AWS secret cache
+    config : Config
+        API config
+
+    Raises
+    ------
+    HTTPException
+        Correct error depending on type
+    """
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    # endpoint
+    postfix = "/registry/entity/dataset/proxy/revert"
+    revert_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+    json_payload = json.loads(revert_request.json(exclude_none=True))
+
+    # make the seed request
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+    context_headers = get_user_context_header(user_cipher=user_cipher, config=config)
+    headers.update(context_headers)
+
+    try:
+        response = requests.put(
+            url=revert_endpoint,
+            json=json_payload,
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Restoring dataset failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset metadata revert failed, not authorised. Status code: {response.status_code}. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset revert process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the update response
+    try:
+        revert_response = ItemRevertResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as a status response, error: {e}."
+        )
+
+    # parsed succesfully
+    if not revert_response.status.success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with status success False during dataset metadata revert. Details: {revert_response.status.details}."
+        )
+
+
+def proxied_request(user: User) -> Dict[str, str]:
+    """
+
+    Generates a header formatted with current user token. Pass through user auth.
+
+    Parameters
+    ----------
+    user : User
+        The user object
+
+    Returns
+    -------
+    Dict[str, str]
+        The headers
+    """
+    # creates a header for use in requests
+    return {
+        'Authorization': 'Bearer ' + user.access_token
+    }
+
+
+def user_proxy_fetch_dataset_from_registry(user_cipher: str, item_id: str, config: Config, secret_cache: SecretCache) -> DatasetFetchResponse:
+
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    postfix = "/registry/entity/dataset/proxy/fetch"
+    fetch_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+    context_headers = get_user_context_header(user_cipher=user_cipher, config=config)
+    headers.update(context_headers)
+
+    try:
+        response = requests.get(
+            url=fetch_endpoint,
+            params={"id": item_id},
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fetching dataset failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset fetch failed, not authorised 401. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Non 200 status code in dataset fetch process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the version response
+    try:
+        fetch_response = DatasetFetchResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as expected type, error: {e}."
+        )
+
+    return fetch_response
+
+
+def user_fetch_dataset_from_registry(id: str, config: Config, user: User) -> DatasetFetchResponse:
+    """
+
+    Passes through the user's token to make a fetch on their behalf from the registry.
+
+    Not proxied.
+
+    Parameters
+    ----------
+    id : str
+        The item id
+    config : Config
+        API config
+    user : User
+        User
+
+    Returns
+    -------
+    DatasetFetchResponse
+        The registry response parsed
+
+    Raises
+    ------
+    HTTPException
+        400/401/500 depending on error
+    """
+    # endpoint
+    postfix = "/registry/entity/dataset/fetch"
+    fetch_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    # make the seed request
+    headers = proxied_request(user)
+
+    params = {
+        'id': id
+    }
+
+    try:
+        response = requests.get(
+            url=fetch_endpoint,
+            headers=headers,
+            params=params
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fetching dataset failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        # unauthorised
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Registry did not grant access to the dataset. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset fetch process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the fetch response
+    try:
+        fetch_response = DatasetFetchResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the fetch response from the registry, error: {e}."
+        )
+
+    # parsed succesfully
+    if not fetch_response.status.success:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The registry API responded with status success False during dataset fetching. Details: {fetch_response.status.details}."
+        )
+
+    # check item exists
+    if not fetch_response.item:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with success but didn't provide an item."
+        )
+
+    if fetch_response.item_is_seed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The requested dataset is an incomplete item (seed item). It is not a valid dataset."
+        )
+
+    assert isinstance(fetch_response.item, ItemDataset)
+
+    # return the item
+    return fetch_response
+
+
+def fetch_dataset_helper(handle_id: IdentifiedResource, user: User, config: Config) -> RegistryFetchResponse:
+    # Fetches all columns of the registry for a particular handle_id ("row")
+    if handle_id == "":
+        raise HTTPException(
+            status_code=400,
+            detail="Empty string received for query handle_id"
+        )
+
+    # fetch the dataset from reg api - this will respect auth and raise
+    # appropriate error - it also checks that the item exists in the payload and that
+    # success was true - it includes roles as well
+    try:
+        registry_item = user_fetch_dataset_from_registry(
+            id=handle_id,
+            config=config,
+            user=user
+        )
+    except HTTPException as e:
+        # something has handled this responsibly in fast API format so just
+        # raise the error
+        raise e
+    except Exception as e:  # all other errors.
+        raise Exception(
+            f"Something unexpected went wrong during data retrieval. Error: {e}")
+
+    return RegistryFetchResponse(
+        status=Status(
+            success=True,
+            details=f"Successfully fetched data for handle '{handle_id}'"
+        ),
+        item=registry_item.item,
+        roles=registry_item.roles,
+        locked=registry_item.locked
+    )
+
+
+def user_list_datasets_from_registry(config: Config, user: User, list_request: NoFilterSubtypeListRequest) -> DatasetListResponse:
+    """
+
+    Makes a dataset list response on behalf of the user using their token.
+
+    Basically just a prefiltered list query for dataset subtype.
+
+    Parameters
+    ----------
+    config : Config
+        The API config
+    user : User
+        User info
+    list_request : NoFilterSubtypeListRequest
+        The list request
+
+    Returns
+    -------
+    DatasetListResponse
+        The dataset list response from reg API
+
+    Raises
+    ------
+    HTTPException
+        400/401/500 depending on registry
+    """
+    # endpoint
+    postfix = "/registry/entity/dataset/list"
+    list_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    # make the seed request
+    headers = proxied_request(user)
+
+    # completed request payload
+    full_request = SubtypeListRequest(
+        filter_by=None,
+        sort_by=list_request.sort_by,
+        pagination_key=list_request.pagination_key,
+        page_size=list_request.page_size
+    )
+
+    try:
+        response = requests.post(
+            url=list_endpoint,
+            headers=headers,
+            json=json.loads(full_request.json())
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Listing datasets failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        # unauthorised
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Registry did not grant access to the list endpoint. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in dataset list process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the list response
+    try:
+        list_response = DatasetListResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the list response from the registry, error: {e}."
+        )
+
+    # parsed succesfully
+    if not list_response.status.success:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The registry API responded with status success False during dataset listing. Details: {list_response.status.details}."
+        )
+
+    # check item exists
+    if list_response.items is None:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with success but didn't provide a list of items."
+        )
+
+    return list_response
+
+
+def version_dataset_in_registry(user_cipher: str, version_request: VersionRequest, secret_cache: SecretCache, config: Config) -> VersionResponse:
+    """
+
+    Performs a versioning/version operation.
+
+    This is a proxy operation which always spins off an asynchronous job - this response is relayed straight from the registry API.
+
+    Parameters
+    ----------
+    user_cipher : str
+        Encrypted user context of requester
+    version_request : VersionRequest
+        The version request
+    secret_cache : SecretCache
+        The AWS secret cache
+    config : Config
+        The API config
+
+    Returns
+    -------
+    VersionResponse
+        The response from the registry API incl. new item ID and session ID
+
+    Raises
+    ------
+    HTTPException
+        400/401/500 from registry API
+    """
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    proxy_request = py_to_dict(VersionRequest(
+        id=version_request.id,
+        reason=version_request.reason,
+    ))
+
+    # endpoint
+    postfix = "/registry/entity/dataset/proxy/version"
+    version_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+
+    # make the seed request
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+    user_context_headers = get_user_context_header(
+        user_cipher=user_cipher, config=config)
+    headers.update(user_context_headers)
+
+    try:
+        response = requests.post(
+            url=version_endpoint,
+            json=proxy_request,
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Versioning dataset failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Dataset version failed, not authorised 401. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Non 200 status code in dataset version process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the version response
+    try:
+        version_response = VersionResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as expected type, error: {e}."
+        )
+
+    return version_response
+
+
+def fetch_person_in_registry(id: str, secret_cache: SecretCache, config: Config) -> PersonFetchResponse:
+    """
+
+    Fetches a person based on ID using the service account permissions of the
+    data store API
+
+    Parameters
+    ----------
+    id: str 
+        The ID of the person to fetch
+    secret_cache : SecretCache
+        AWS secret cache
+    config : Config
+        API config
+
+    Raises
+    ------
+    HTTPException
+        Correct error depending on type
+    """
+    # get service token - this includes special roles which the registry expects
+    token = generate_service_token_for_registry_api(
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    # endpoint
+    postfix = "/registry/agent/person/fetch"
+    fetch_endpoint = config.REGISTRY_API_ENDPOINT + postfix
+    params = {'id': id}
+
+    # make the seed request
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    try:
+        response = requests.get(
+            url=fetch_endpoint,
+            params=params,
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fetching person from registry failed, request error: {e}."
+        )
+
+    # check the response code
+    if response.status_code != 200:
+        # try to get more details
+        details = "Unknown"
+
+        try:
+            details = response.json()['detail']
+        except Exception:
+            None
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Fetching person failed, not authorised. Status code: {response.status_code}. Details: {details}."
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected non 200 status code in person fetch process. Status code: {response.status_code}. Details: {details}."
+        )
+
+    # 200 response code - parse as the update response
+    try:
+        fetch_response = PersonFetchResponse.parse_obj(response.json())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse the response from registry API as a status response, error: {e}."
+        )
+
+    # parsed succesfully
+    if not fetch_response.status.success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"The registry API responded with status success False during fetching of a person. Details: {fetch_response.status.details}."
+        )
+
+    return fetch_response
+
+
+def get_user_email(person_id: str, secret_cache: SecretCache, config: Config) -> str:
+    # Get details of the reviewer to determine email address
+    fetch_result = fetch_person_in_registry(
+        id=person_id,
+        secret_cache=secret_cache,
+        config=config
+    )
+
+    assert fetch_result.item is not None and isinstance(
+        fetch_result.item, ItemPerson)
+    person: ItemPerson = fetch_result.item
+
+    return person.email
+
+
+def ensure_user_roles_access_to_dataset(dataset_id: IdentifiedResource, user: User, roles: List[str], config: Config) -> ItemDataset:
+    """Fetches the dataset from the registry and ensures the user has the expected roles for accessing the dataset. The fetch 
+    minimally requires metadata read. 
+    Returns the Dataset if user has the right roles (roles param) into the dataset (dataset_fetch.roles)
+
+    Parameters
+    ----------
+    dataset_id : IdentifiedResource
+        Dataset ID to fetch and check if the user has the correct roles for.
+    user : User
+        The user fetching and checking roles of
+    roles : List[str]
+        The roles the user must have into this dateset item.
+    config : Config
+        configuration context object
+
+    Returns
+    -------
+    ItemDataset
+        The datatset being fetched and checked if the user has the roles
+
+    Raises
+    ------
+    HTTPException
+        401 - No metadata read to fetch dataset
+    HTTPException
+        401 - User does not have expected privileges for dataset with id
+    """
+    dataset_fetch = fetch_dataset_helper(dataset_id, user, config)
+
+    # Bug. This requires metadata read to dataset to succeed. But roles could be just dataset data read.
+    # WHen would someone have dataset data read but not metadata read?
+    if dataset_fetch.roles is None:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Failed to source roles for dataset '{dataset_id}'. Action requires metadata read access to dataset."
+        )
+
+    # Checks if expected role are present
+    if not evaluate_user_access(
+        user_roles=dataset_fetch.roles,
+        acceptable_roles=roles
+    ):
+        raise HTTPException(
+            status_code=401,  # unauthorised.
+            detail=f"User {user.username} does not have expected dataset data privileges for dataset with id '{dataset_id}'." +
+            f"Expected roles of {str(roles)} but got {dataset_fetch.roles}"
+        )
+
+    assert dataset_fetch.item, f"Expected an item to be fetched, but got None for dataset item."
+    return dataset_fetch.item

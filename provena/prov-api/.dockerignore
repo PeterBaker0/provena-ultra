@@ -1,0 +1,10 @@
+.venv/*
+.vscode/*
+tests/*
+thunder-tests/*
+environment.yml
+requirements.txt
+.env
+JobDockerfile
+Dockerfile
+lambda_dockerfile

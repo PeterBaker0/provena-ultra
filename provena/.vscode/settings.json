@@ -1,0 +1,11 @@
+{
+    "explorer.compactFolders": false,
+    "python.formatting.provider": "autopep8",
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on",
+    "editor.autoIndent": "keep",
+    "editor.tabSize": 4,
+    "autoDocstring.docstringFormat": "numpy",
+    // Disable linting for top level workspace
+    "python.linting.enabled": false
+}

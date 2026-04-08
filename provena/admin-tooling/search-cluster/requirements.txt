@@ -1,0 +1,18 @@
+requests
+python-jose
+mypy
+types-requests
+pydantic==1.10.17
+python-dotenv
+typer[all]
+
+# requirements for v4 signed auth
+boto3
+botocore
+requests_aws4auth
+
+# shared interfaces
+../../utilities/packages/python/provena-interfaces
+
+# Tooling environment manager 
+../tooling-environment-manager

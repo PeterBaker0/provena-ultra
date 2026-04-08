@@ -1,0 +1,3 @@
+# Shared interfaces
+../provena-interfaces
+-e .
