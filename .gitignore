@@ -4,7 +4,6 @@ build
 .turbo
 .env
 .env.local
-pnpm-lock.yaml
 coverage
 *.log
 *.tsbuildinfo

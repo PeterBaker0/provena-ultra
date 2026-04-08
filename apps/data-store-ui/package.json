@@ -1,5 +1,5 @@
 {
-  "name": "provena_data_store_ui",
+  "name": "@provena/data-store-ui",
   "version": "1.4.0",
   "private": true,
   "dependencies": {
@@ -60,6 +60,7 @@
     "react": "^17.0.2",
     "react-debounce-input": "^3.3.0",
     "react-dom": "^17.0.2",
+    "react-libs": "workspace:*",
     "react-router-dom": "^5.3.0",
     "react-vertical-timeline-component": "^3.6.0",
     "terser": ">=5.14.2",
@@ -67,10 +68,8 @@
     "web-vitals": "^1.0.1"
   },
   "scripts": {
-    "devlibsetup": "../scripts/builds/dev_lib_setup.sh",
-    "buildlibsetup": "../scripts/builds/dev_lib_setup.sh",
-    "preinstall": "npm run devlibsetup",
-    "build": "npx tsc && vite build",
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
     "serve": "serve -s build",
     "build:example": "npx tsc && env-cmd -f .env.example vite build",
     "start:example": "npx tsc && env-cmd -f .env.example vite",
@@ -80,7 +79,10 @@
     "start:dev": "env-cmd -f .env.dev vite",
     "start:feat": "env-cmd -f .env.feat vite",
     "start:stage": "env-cmd -f .env.stage vite",
-    "start:prod": "env-cmd -f .env.prod vite"
+    "start:prod": "env-cmd -f .env.prod vite",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'No lint configured for @provena/data-store-ui'",
+    "test": "echo 'No tests configured for @provena/data-store-ui'"
   },
   "eslintConfig": {
     "extends": [
