@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
@@ -6,8 +7,31 @@ import checker from "vite-plugin-checker";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  envDir: "../../",
-  resolve: { preserveSymlinks: true },
+  envDir: path.resolve(__dirname, "../.."),
+  resolve: {
+    dedupe: [
+      "react",
+      "react-dom",
+      "react-router",
+      "react-router-dom",
+      "history",
+      "prop-types",
+      "tiny-warning",
+      "tiny-invariant",
+      "loose-envify",
+      "@babel/runtime",
+      "@mui/material",
+      "@mui/system",
+      "@mui/utils",
+      "@mui/icons-material",
+      "@mui/styles",
+      "@mui/x-data-grid",
+      "@mui/x-date-pickers",
+      "@emotion/react",
+      "@emotion/styled",
+      "react-libs",
+    ],
+  },
   plugins: [
     react(),
     viteTsconfigPaths(),
@@ -23,5 +47,18 @@ export default defineConfig({
     open: false,
     port: 3004,
   },
-  optimizeDeps: { esbuildOptions: { preserveSymlinks: true } },
+  optimizeDeps: {
+    include: [
+      "react-router",
+      "react-router-dom",
+      "history",
+      "prop-types",
+      "tiny-warning",
+      "tiny-invariant",
+      "loose-envify",
+      "@babel/runtime/helpers/esm/inheritsLoose",
+      "@babel/runtime/helpers/esm/extends",
+      "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose",
+    ],
+  },
 });

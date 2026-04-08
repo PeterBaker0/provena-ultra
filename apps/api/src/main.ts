@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
 import { getEnv } from "@provena/config";
 import { createLogger } from "@provena/observability";
 import { optionalAuthMiddleware } from "@provena/auth";
@@ -48,5 +49,20 @@ app.get("/", (c) =>
     message: "Health check successful.",
   }),
 );
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  serve(
+    {
+      fetch: app.fetch,
+      port: env.API_PORT,
+      hostname: "0.0.0.0",
+    },
+    () => {
+      logger.info("api_server_started", {
+        port: env.API_PORT,
+      });
+    },
+  );
+}
 
 export default app;

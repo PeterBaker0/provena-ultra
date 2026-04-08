@@ -109,7 +109,7 @@ export class AdminStore {
               console.log(res.email_alert.details ?? "");
               onFailure(
                 "Status changed successfully, email failure -> " +
-                  res.email_alert.details ?? "Unknown",
+                  (res.email_alert.details ?? "Unknown"),
               );
             }
           } else {

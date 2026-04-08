@@ -1,24 +1,25 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["vite/client", "vite-plugin-svgr/client"],
+    "types": ["vite/client", "vite-plugin-svgr/client", "jest"],
     "allowJs": true,
     "skipLibCheck": true,
+    "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": false,
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": "./src",
-    "rootDir": "./src",
     "paths": {
+      "react-libs": ["../../../packages/ui-shared/src/index.ts"],
+      "react-libs/*": ["../../../packages/ui-shared/src/*"],
       "components/*": ["components/*"],
       "hooks/*": ["hooks/*"],
       "layout/*": ["layout/*"],
@@ -26,10 +27,9 @@
       "queries/*": ["queries/*"],
       "stores/*": ["stores/*"],
       "subpages/*": ["subpages/*"],
-      "util/*": ["util/*"],
-      "react-libs": ["../../packages/ui-shared/src/index.ts"],
-      "react-libs/*": ["../../packages/ui-shared/src/*"]
+      "util/*": ["util/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/testing/**"]
 }

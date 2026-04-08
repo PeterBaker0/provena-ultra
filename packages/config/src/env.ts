@@ -1,4 +1,27 @@
+import path from "node:path";
+import { existsSync } from "node:fs";
+import { config as loadDotEnv } from "dotenv";
 import { z } from "zod";
+
+let dotEnvLoaded = false;
+
+const findEnvFile = (startDir: string): string | undefined => {
+  let currentDir = startDir;
+
+  while (true) {
+    const envPath = path.join(currentDir, ".env");
+    if (existsSync(envPath)) {
+      return envPath;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      return undefined;
+    }
+
+    currentDir = parentDir;
+  }
+};
 
 const splitCsv = (value: string): string[] =>
   value
@@ -64,6 +87,14 @@ let cachedEnv: Env | undefined;
 export const getEnv = (): Env => {
   if (cachedEnv) {
     return cachedEnv;
+  }
+
+  if (!dotEnvLoaded) {
+    const envPath = findEnvFile(process.cwd());
+    if (envPath) {
+      loadDotEnv({ path: envPath });
+    }
+    dotEnvLoaded = true;
   }
 
   const parsed = envSchema.safeParse(process.env);
