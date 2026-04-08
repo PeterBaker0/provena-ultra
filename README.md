@@ -90,21 +90,22 @@ pnpm db:push
 The compose stack includes:
 
 - PostgreSQL
-- Keycloak
+- Keycloak (image `provena-keycloak:local` from `docker/keycloak/Dockerfile`: SPI JAR + theme from `provena/infrastructure/provena/keycloak/`, matching the legacy Keycloak Dockerfile layout)
 - S3-compatible object storage service
 - MailPit (SMTP dev sink)
 - API
 - Worker
 - UI applications
 
-Run:
+Prepare the Keycloak realm file (legacy `DEV-realm.json` needs `${KC_*}` substitution like the CDK `replace_keycloak_vars` step), then start:
 
 ```bash
 cp .env.dist .env
+pnpm keycloak:prepare-realm
 docker compose up -d
 ```
 
-or use:
+or use (runs `keycloak:prepare-realm` automatically):
 
 ```bash
 pnpm compose:up

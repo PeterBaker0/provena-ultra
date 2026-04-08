@@ -2,6 +2,7 @@ import { Button, CircularProgress, Theme } from "@mui/material";
 import { createStyles, makeStyles } from "@mui/styles";
 import { useKeycloak } from "@react-keycloak/web";
 import { Route, RouteProps } from "react-router-dom";
+import { getKeycloakRedirectUri } from "../stores/keycloak";
 import { BoundedContainer } from "../components";
 import * as Sentry from "@sentry/react";
 
@@ -33,44 +34,8 @@ export const ProtectedRoute: React.FC<RouteProps> = ({
   ...props
 }) => {
   const classes = useStyles();
-  const { keycloak } = useKeycloak();
-  if (keycloak.authenticated !== undefined) {
-    if (keycloak.authenticated) {
-      // Init Sentry monitoring user info
-      Sentry.setUser({
-        // sub: keycloak user id, can be found in keycloak admin console -> Users
-        id: keycloak.tokenParsed?.sub,
-      });
-      return <Route {...props}>{children}</Route>;
-    } else {
-      return (
-        <Route
-          {...props}
-          render={(props) => {
-            return (
-              <BoundedContainer breakpointKey={"lg"}>
-                <div className={classes.root}>
-                  <p>
-                    You are not authorized to view this content, please click
-                    the following button to login.{" "}
-                  </p>
-                  <Button
-                    className={classes.button}
-                    color="primary"
-                    variant="contained"
-                    id="prompt-login-button"
-                    onClick={() => keycloak.login()}
-                  >
-                    Login
-                  </Button>
-                </div>
-              </BoundedContainer>
-            );
-          }}
-        />
-      );
-    }
-  } else {
+  const { keycloak, initialized } = useKeycloak();
+  if (!initialized) {
     return (
       <Route
         {...props}
@@ -88,4 +53,41 @@ export const ProtectedRoute: React.FC<RouteProps> = ({
       />
     );
   }
+  if (keycloak.authenticated) {
+    // Init Sentry monitoring user info
+    Sentry.setUser({
+      // sub: keycloak user id, can be found in keycloak admin console -> Users
+      id: keycloak.tokenParsed?.sub,
+    });
+    return <Route {...props}>{children}</Route>;
+  }
+  return (
+    <Route
+      {...props}
+      render={(props) => {
+        return (
+          <BoundedContainer breakpointKey={"lg"}>
+            <div className={classes.root}>
+              <p>
+                You are not authorized to view this content, please click the
+                following button to login.{" "}
+              </p>
+              <Button
+                className={classes.button}
+                color="primary"
+                variant="contained"
+                id="prompt-login-button"
+                onClick={() => {
+                  const redirectUri = getKeycloakRedirectUri();
+                  keycloak.login(redirectUri ? { redirectUri } : undefined);
+                }}
+              >
+                Login
+              </Button>
+            </div>
+          </BoundedContainer>
+        );
+      }}
+    />
+  );
 };

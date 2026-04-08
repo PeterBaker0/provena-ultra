@@ -43,14 +43,12 @@ export const groups = pgTable(
   "groups",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    name: varchar("name", { length: 255 }).notNull(),
+    // UNIQUE constraint (not only a unique index) so FKs can reference this column.
+    name: varchar("name", { length: 255 }).notNull().unique(),
     description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => ({
-    nameUnique: uniqueIndex("groups_name_unique").on(table.name),
-  }),
 );
 
 export const groupMembers = pgTable(

@@ -109,7 +109,7 @@ function RoutesAndLayout() {
   // Pull current theme config
   const themeConfig = useContext(ThemeConfigContext);
 
-  const { keycloak } = useKeycloak();
+  const { keycloak, initialized } = useKeycloak();
 
   const [open, setOpen] = useState(false);
 
@@ -188,7 +188,7 @@ function RoutesAndLayout() {
                   Contact us
                 </Button>
                 <ProfileIcon
-                  isLoggedIn={keycloak.authenticated ?? false}
+                  isLoggedIn={initialized && !!keycloak.authenticated}
                   username={
                     keycloak.tokenParsed
                       ? keycloak.tokenParsed.email

@@ -112,7 +112,7 @@ function RoutesAndLayout() {
   const classes = useStyles();
   // Pull current theme config
   const themeConfig = useContext(ThemeConfigContext);
-  const { keycloak } = useKeycloak();
+  const { keycloak, initialized } = useKeycloak();
   const [open, setOpen] = useState(false);
 
   const SIDE_NAV_LIST_ITEMS: NavListItem[] = [
@@ -221,7 +221,7 @@ function RoutesAndLayout() {
                   Contact us
                 </Button>
                 <ProfileIcon
-                  isLoggedIn={keycloak.authenticated ?? false}
+                  isLoggedIn={initialized && !!keycloak.authenticated}
                   username={
                     keycloak.tokenParsed
                       ? keycloak.tokenParsed.email

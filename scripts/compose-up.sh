@@ -6,4 +6,6 @@ if [[ ! -f ".env" ]]; then
   cp .env.dist .env
 fi
 
+node scripts/resolve-keycloak-dev-realm.mjs
+
 docker compose up -d

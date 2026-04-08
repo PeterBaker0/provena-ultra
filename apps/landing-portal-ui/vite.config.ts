@@ -4,10 +4,12 @@ import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
+import { viteMergedEnvDefine } from "../../scripts/vite-merged-env-define";
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   envDir: path.resolve(__dirname, "../.."),
+  define: viteMergedEnvDefine(mode, __dirname),
   resolve: {
     dedupe: [
       "react",
@@ -49,9 +51,10 @@ export default defineConfig({
   },
   server: {
     open: false,
+    host: true,
     port: 3005,
   },
   optimizeDeps: {
     include: ["react-router", "react-router-dom", "history", "tiny-warning", "tiny-invariant"],
   },
-});
+}));

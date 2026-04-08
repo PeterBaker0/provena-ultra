@@ -8,6 +8,7 @@
     "dev": "turbo run dev --parallel",
     "dev:all": "bash ./scripts/dev.sh",
     "compose:up": "bash ./scripts/compose-up.sh",
+    "keycloak:prepare-realm": "node scripts/resolve-keycloak-dev-realm.mjs",
     "dev:api": "pnpm --filter @provena/api dev",
     "dev:worker": "pnpm --filter @provena/worker dev",
     "typecheck": "turbo run typecheck",

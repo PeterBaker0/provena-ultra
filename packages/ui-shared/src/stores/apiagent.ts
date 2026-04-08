@@ -1,25 +1,30 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import { keycloak } from "./keycloak";
 import * as Sentry from "@sentry/react";
 
+let apiClient: AxiosInstance | null = null;
+
+function getApiClient(): AxiosInstance {
+  if (!apiClient) {
+    apiClient = axios.create({
+      headers: { "Content-Type": "application/json" },
+    });
+    apiClient.interceptors.request.use((config) => {
+      if (keycloak.authenticated && keycloak.token) {
+        if (!config.headers) {
+          config.headers = {};
+        }
+        config.headers["Authorization"] = "Bearer " + keycloak.token;
+      }
+      return config;
+    });
+  }
+  return apiClient;
+}
+
 //@ts-ignore
 export const apiagent = (options) => {
-  // This relies on keycloak being setup properly and injected in the
-  // consuming library!
-  if (keycloak.authenticated) {
-    axios.defaults.headers.common["Authorization"] = "Bearer " + keycloak.token;
-  }
-  axios.defaults.headers.common["Content-Type"] = "application/json";
-
-  const request = axios.create();
-
-  // Add a request interceptor
-  request.interceptors.request.use(
-    (requestConfig) => requestConfig,
-    (requestError) => {
-      return Promise.reject(requestError);
-    },
-  );
+  const request = getApiClient();
 
   //@ts-ignore
   const onSuccess = function (response) {

@@ -3,6 +3,7 @@ import { Box, Button, IconButton, Theme, useTheme } from "@mui/material";
 import { createStyles, makeStyles } from "@mui/styles";
 import { useKeycloak } from "@react-keycloak/web";
 import { Link as RouterLink } from "react-router-dom";
+import { getKeycloakRedirectUri } from "../stores/keycloak";
 
 export const DEFAULT_PROFILE_POSTFIX = "/profile";
 
@@ -65,7 +66,8 @@ export const ProfileIcon = (props: ProfileIconProps) => {
         <Button
           variant="contained"
           onClick={() => {
-            keycloak.login();
+            const redirectUri = getKeycloakRedirectUri();
+            keycloak.login(redirectUri ? { redirectUri } : undefined);
           }}
           id="login-tab-button"
         >
