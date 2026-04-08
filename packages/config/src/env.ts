@@ -68,7 +68,6 @@ const envSchema = z.object({
   VITE_PROV_API_ENDPOINT: z.string().url(),
   VITE_SEARCH_API_ENDPOINT: z.string().url(),
   VITE_JOB_API_ENDPOINT: z.string().url(),
-  VITE_WARMER_API_ENDPOINT: z.string().url(),
   VITE_KEYCLOAK_AUTH_ENDPOINT: z.string().url(),
   VITE_LANDING_PAGE_LINK: z.string().url(),
   VITE_DATA_STORE_LINK: z.string().url(),

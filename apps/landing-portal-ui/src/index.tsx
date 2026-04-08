@@ -11,11 +11,7 @@ import reportWebVitals from "./reportWebVitals";
 import { createContext } from "react";
 import CustomThemeStore from "react-libs/stores/customThemeStore";
 import { PageThemeConfig } from "react-libs/util/themeValidation";
-import { Warmer, sentryInit } from "react-libs";
-
-// Initiate lambda warmer
-console.log("Initiating lambda warmer.");
-const warmer = new Warmer();
+import { sentryInit } from "react-libs";
 
 declare module "@mui/styles/defaultTheme" {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface

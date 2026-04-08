@@ -6,15 +6,11 @@ import {
 } from "@mui/material";
 import { createContext } from "react";
 import ReactDOM from "react-dom";
-import { Warmer, sentryInit } from "react-libs";
+import { sentryInit } from "react-libs";
 import CustomThemeStore from "react-libs/stores/customThemeStore";
 import { PageThemeConfig } from "react-libs/util/themeValidation";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-
-// Setup warmer
-console.log("Initiating lambda warmer.");
-const warmer = new Warmer();
 
 declare module "@mui/styles" {
   interface DefaultTheme extends Theme {

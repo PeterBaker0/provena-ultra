@@ -18,7 +18,6 @@ export const SEARCH_API_URL = import.meta.env.VITE_SEARCH_API_ENDPOINT;
 export const PROV_API_URL = import.meta.env.VITE_PROV_API_ENDPOINT;
 export const KEYCLOAK_AUTH_ENDPOINT = import.meta.env
   .VITE_KEYCLOAK_AUTH_ENDPOINT;
-export const WARMER_API_URL = import.meta.env.VITE_WARMER_API_ENDPOINT;
 export const JOB_API_URL = import.meta.env.VITE_JOB_API_ENDPOINT;
 
 /**
@@ -55,7 +54,6 @@ const required: Array<[string | undefined, string]> = [
   [PROV_API_URL, "Prov API URL"],
   [JOB_API_URL, "Job API URL"],
   [KEYCLOAK_AUTH_ENDPOINT, "Keycloak Auth Endpoint URL"],
-  [WARMER_API_URL, "Lambda Function Warmer API URL"],
   [
     DOCUMENTATION_BASE_URL,
     "Documentation home page. The URL of the github pages base documentation.",

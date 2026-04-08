@@ -114,7 +114,6 @@ pnpm compose:up
 
 - Root `.env` (from `.env.dist`) is used by the UI apps through Vite `envDir` configuration.
 - API endpoints default to the monolith (`http://localhost:3000`) to preserve compatibility routes.
-- `VITE_WARMER_API_ENDPOINT` defaults to `http://localhost:3000/warmer` and is served by the API compatibility endpoint.
 
 ## CI
 

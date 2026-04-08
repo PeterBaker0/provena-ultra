@@ -43,7 +43,6 @@ The shared package expects consuming UI environments to provide:
   - `VITE_PROV_API_ENDPOINT`
   - `VITE_SEARCH_API_ENDPOINT`
   - `VITE_JOB_API_ENDPOINT`
-  - `VITE_WARMER_API_ENDPOINT`
 - Keycloak:
   - `VITE_KEYCLOAK_AUTH_ENDPOINT`
   - `VITE_KEYCLOAK_CLIENT_ID`
