@@ -8,7 +8,22 @@ Self-hostable re-architecture of the legacy Provena platform using:
 - PostgreSQL + Drizzle (`packages/db`)
 - PostgreSQL-backed queue workers with `pg-boss` (`apps/worker`, `packages/queue`)
 - S3-compatible object storage adapter (`packages/storage`)
-- Reused frontend environment contract with shell apps (`apps/*-ui`, `packages/ui-shared`)
+- Migrated frontend applications (`apps/*-ui`) backed by shared `react-libs` (`packages/ui-shared`)
+
+## Repository layout
+
+```txt
+apps/
+  api/
+  worker/
+  registry-ui/
+  data-store-ui/
+  prov-ui/
+  landing-portal-ui/
+packages/
+  ui-shared/   # package name: react-libs
+  ...
+```
 
 ## Quick start (local development)
 
@@ -36,7 +51,7 @@ or use the helper script:
 pnpm dev:all
 ```
 
-You can also run specific apps:
+## Run specific services/apps
 
 ```bash
 pnpm --filter @provena/api dev
@@ -47,10 +62,19 @@ pnpm --filter @provena/prov-ui dev
 pnpm --filter @provena/landing-portal-ui dev
 ```
 
-## Typecheck
+Default local ports:
+
+- API: `3000`
+- Registry UI: `3002`
+- Data Store UI: `3003`
+- Provenance UI: `3004`
+- Landing Portal UI: `3005`
+
+## Typecheck and build
 
 ```bash
 pnpm typecheck
+pnpm build
 ```
 
 ## Database (Drizzle)
@@ -85,6 +109,12 @@ or use:
 ```bash
 pnpm compose:up
 ```
+
+## UI environment notes
+
+- Root `.env` (from `.env.dist`) is used by the UI apps through Vite `envDir` configuration.
+- API endpoints default to the monolith (`http://localhost:3000`) to preserve compatibility routes.
+- `VITE_WARMER_API_ENDPOINT` defaults to `http://localhost:3000/warmer` and is served by the API compatibility endpoint.
 
 ## CI
 

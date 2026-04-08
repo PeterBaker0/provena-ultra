@@ -1,6 +1,5 @@
 node_modules
-yarn-error.log
 build
 .env
 .env.feat
-src/react-libs
+yarn-error.log

@@ -1,75 +1,64 @@
-# React shared libraries RRAP IS
+# react-libs (`packages/ui-shared`)
 
-Set of shared functionality which is reused between multiple UI components.
+Shared React/TypeScript library consumed by all migrated Provena UIs in this monorepo.
 
-## Usage
+## Package role
 
-Each of the consuming UI libraries are setup to perform a build linking step which embeds a symlink into this folder.
+- Centralises shared UI components, hooks, typed API clients, stores, and utilities.
+- Preserves the legacy import contract (`react-libs`, `react-libs/*`) for compatibility.
+- Is consumed as a pnpm workspace dependency (no symlink/preinstall hacks).
 
-This was required due to a Vite build time bug which broke context provider functionality.
+## Development
 
+From repository root:
 
-Importing from the lib uses a single global scope e.g.
-
-```typescript
-import { ComponentName, useSomeHook } from "react-libs";
+```bash
+pnpm --filter react-libs build
+pnpm --filter react-libs typecheck
 ```
 
-## Contents
+## Consumption
 
-### Components
+UI apps depend on this package via:
 
-Contains react components with various functions. Notably contains the form overrides used in the RJSF forms in Registry and Data Store. Also notably contains the Json detail renderered used in nearly all UIs now.
+```json
+"react-libs": "workspace:*"
+```
 
-### Hooks
+and import as:
 
-Contains various custom hooks which are consumed by the Components or used on their own. Require the queries + auth from the keycloak setup.
+```ts
+import { keycloak, sentryInit } from "react-libs";
+import { PageThemeConfig } from "react-libs/util/themeValidation";
+```
 
-### Interfaces
+## Required runtime environment variables
 
-Contains some helpful interfaces/types and helper funcs on those e.g. the hookInterfaces.
+The shared package expects consuming UI environments to provide:
 
-### Layout
-
-Contains some layout helper components such as ProtectedRoute.
-
-### Queries
-
-Uses the API endpoints to perform typed queries. Returns Promise objects for the response type. Used extensively in the custom hooks.
-
-### Stores
-
-Some classes/stateful stores - notably contains the keycloak and api agent stores which interact with each other to provide authorised API requests.
-
-### Tasks
-
-Currently just contains the Lambda warmer background task.
-
-### Util
-
-Various utility/helper functions.
-
-## Requirements
-
-### Env variables (required at build/run time)
-
-If you don't have these at runtime the shared lib throws an error.
-
-**API Endpoints:** (mandatory)
-
--   VITE_AUTH_API_ENDPOINT
--   VITE_REGISTRY_API_ENDPOINT
--   VITE_SEARCH_API_ENDPOINT
--   VITE_WARMER_API_ENDPOINT
-
-**Keycloak Auth Links and Config:** (mandatory)
-
--   VITE_KEYCLOAK_CLIENT_ID
--   VITE_KEYCLOAK_AUTH_ENDPOINT
-
-**UI Links:** (recommended - dead links if not provided)
-
--   VITE_LANDING_PAGE_LINK
--   VITE_DATA_STORE_LINK
--   VITE_PROV_LINK
--   VITE_REGISTRY_LINK
+- API endpoints:
+  - `VITE_AUTH_API_ENDPOINT`
+  - `VITE_DATA_STORE_API_ENDPOINT`
+  - `VITE_REGISTRY_API_ENDPOINT`
+  - `VITE_PROV_API_ENDPOINT`
+  - `VITE_SEARCH_API_ENDPOINT`
+  - `VITE_JOB_API_ENDPOINT`
+  - `VITE_WARMER_API_ENDPOINT`
+- Keycloak:
+  - `VITE_KEYCLOAK_AUTH_ENDPOINT`
+  - `VITE_KEYCLOAK_CLIENT_ID`
+  - `VITE_KEYCLOAK_REALM`
+- UI links:
+  - `VITE_LANDING_PAGE_LINK`
+  - `VITE_DATA_STORE_LINK`
+  - `VITE_PROV_STORE_LINK`
+  - `VITE_REGISTRY_LINK`
+  - `VITE_DOCUMENTATION_BASE_LINK`
+  - `VITE_CONTACT_US_LINK`
+- Theme and monitoring:
+  - `VITE_THEME_ID`
+  - `VITE_SENTRY_DSN`
+  - `VITE_GIT_COMMIT_ID`
+  - `VITE_MONITORING_ENABLED`
+  - `VITE_FEATURE_NUMBER`
+  - `VITE_STAGE`
