@@ -10,6 +10,7 @@ import { createSearchRoutes } from "./search";
 import { createProvRoutes } from "./prov";
 import { createJobsRoutes } from "./jobs";
 import { createIdServiceRoutes } from "./idService";
+import { createWarmerRoutes } from "./warmer";
 
 export const registerAllRoutes = (app: Hono<ApiBindings>): void => {
   app.route("/check-access", createCheckAccessRoutes());
@@ -22,4 +23,5 @@ export const registerAllRoutes = (app: Hono<ApiBindings>): void => {
   app.route("/", createProvRoutes());
   app.route("/", createJobsRoutes());
   app.route("/handle", createIdServiceRoutes());
+  app.route("/", createWarmerRoutes());
 };
