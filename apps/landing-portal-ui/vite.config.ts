@@ -6,6 +6,7 @@ import checker from "vite-plugin-checker";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  envDir: "../../",
   resolve: { preserveSymlinks: true },
   plugins: [
     react(),
@@ -19,8 +20,8 @@ export default defineConfig({
     outDir: "build",
   },
   server: {
-    open: true,
-    port: 3000,
+    open: false,
+    port: 3005,
   },
   optimizeDeps: { esbuildOptions: { preserveSymlinks: true } },
 });

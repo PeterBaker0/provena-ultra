@@ -1,23 +1,32 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "lib": ["dom", "dom.iterable", "esnext"],
-        "types": ["vite/client", "vite-plugin-svgr/client"],
-        "allowJs": true,
-        "skipLibCheck": true,
-        "esModuleInterop": false,
-        "allowSyntheticDefaultImports": true,
-        "strict": true,
-        "forceConsistentCasingInFileNames": true,
-        "noFallthroughCasesInSwitch": true,
-        "module": "ESNext",
-        "moduleResolution": "node",
-        "resolveJsonModule": true,
-        "isolatedModules": false,
-        "noEmit": true,
-        "jsx": "react-jsx",
-        "baseUrl": "./src",
-        "rootDir": "./src"
-    },
-    "include": ["src"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["vite/client", "vite-plugin-svgr/client"],
+    "allowJs": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "isolatedModules": false,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "paths": {
+      "react-libs": ["../../packages/ui-shared/src/index.ts"],
+      "react-libs/*": ["../../packages/ui-shared/src/*"],
+      "components/*": ["components/*"],
+      "hooks/*": ["hooks/*"],
+      "pages/*": ["pages/*"],
+      "queries/*": ["queries/*"],
+      "stores/*": ["stores/*"],
+      "layout/*": ["layout/*"],
+      "util/*": ["util/*"],
+      "subpages/*": ["subpages/*"],
+      "interfaces/*": ["interfaces/*"]
+    }
+  },
+  "include": ["src"]
 }

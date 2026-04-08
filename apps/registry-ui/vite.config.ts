@@ -1,11 +1,12 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
 
-// https://vitejs.dev/config/
 export default defineConfig({
+  envDir: path.resolve(__dirname, "../.."),
   resolve: { preserveSymlinks: true },
   plugins: [
     react(),
@@ -20,7 +21,7 @@ export default defineConfig({
   },
   server: {
     open: false,
-    port: 3000,
+    port: 3002,
   },
   optimizeDeps: { esbuildOptions: { preserveSymlinks: true } },
 });

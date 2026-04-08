@@ -21,7 +21,7 @@ import { DataGrid, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import {
   renderHandleIdLink,
   searchOnlyDataToolbar,
-} from "../react-libs/util/DataGridHelpers";
+} from "react-libs/util/DataGridHelpers";
 
 import { Theme } from "@mui/material/styles";
 import createStyles from "@mui/styles/createStyles";
