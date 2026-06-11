@@ -1,0 +1,177 @@
+# Production-style full stack for Provena v2.
+#
+#   cp .env.dist .env          # adjust secrets + public hostnames
+#   pnpm keycloak:prepare-realm
+#   docker compose up -d --build
+#
+# Services: postgres, keycloak, rustfs (S3+STS object store), api, worker,
+# four UIs (nginx) and mailpit (replace with real SMTP in production by
+# setting SMTP_* in .env and removing mailpit).
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-provena}
+      POSTGRES_USER: ${POSTGRES_USER:-provena}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-provena}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-keycloak-db.sql:/docker-entrypoint-initdb.d/init-keycloak-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-provena} -d ${POSTGRES_DB:-provena}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  keycloak:
+    build:
+      context: docker/keycloak
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: xforwarded
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-provena}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-provena}
+    command: ["start", "--http-port=8081", "--import-realm"]
+    volumes:
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-provena-root}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY:-provena-secret}
+    command: ["--address", "0.0.0.0:9000", "/data"]
+    volumes:
+      - rustfs_data:/data
+    ports:
+      - "9000:9000"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
+      STORAGE_ENDPOINT: http://rustfs:9000
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      WORKER_EMBEDDED: "false"
+      API_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    command: ["node", "apps/worker/dist/main.js"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
+      STORAGE_ENDPOINT: http://rustfs:9000
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  landing-portal-ui:
+    build:
+      context: .
+      dockerfile: docker/ui/Dockerfile
+      args: &ui-args
+        VITE_AUTH_API_ENDPOINT: ${VITE_AUTH_API_ENDPOINT}
+        VITE_REGISTRY_API_ENDPOINT: ${VITE_REGISTRY_API_ENDPOINT}
+        VITE_DATA_STORE_API_ENDPOINT: ${VITE_DATA_STORE_API_ENDPOINT}
+        VITE_PROV_API_ENDPOINT: ${VITE_PROV_API_ENDPOINT}
+        VITE_SEARCH_API_ENDPOINT: ${VITE_SEARCH_API_ENDPOINT}
+        VITE_JOB_API_ENDPOINT: ${VITE_JOB_API_ENDPOINT}
+        VITE_WARMER_API_ENDPOINT: ${VITE_WARMER_API_ENDPOINT}
+        VITE_KEYCLOAK_AUTH_ENDPOINT: ${VITE_KEYCLOAK_AUTH_ENDPOINT}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+        VITE_LANDING_PAGE_LINK: ${VITE_LANDING_PAGE_LINK}
+        VITE_REGISTRY_LINK: ${VITE_REGISTRY_LINK}
+        VITE_DATA_STORE_LINK: ${VITE_DATA_STORE_LINK}
+        VITE_PROV_STORE_LINK: ${VITE_PROV_STORE_LINK}
+        VITE_THEME_ID: ${VITE_THEME_ID:-default}
+        VITE_STAGE: ${VITE_STAGE:-PROD}
+        VITE_DOCUMENTATION_BASE_LINK: ${VITE_DOCUMENTATION_BASE_LINK}
+        VITE_CONTACT_US_LINK: ${VITE_CONTACT_US_LINK}
+        VITE_MONITORING_ENABLED: ${VITE_MONITORING_ENABLED:-false}
+        UI_NAME: landing-portal-ui
+        VITE_KEYCLOAK_CLIENT_ID: landing-portal-ui
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+
+  registry-ui:
+    build:
+      context: .
+      dockerfile: docker/ui/Dockerfile
+      args:
+        <<: *ui-args
+        UI_NAME: registry-ui
+        VITE_KEYCLOAK_CLIENT_ID: entity-registry-ui
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+
+  data-store-ui:
+    build:
+      context: .
+      dockerfile: docker/ui/Dockerfile
+      args:
+        <<: *ui-args
+        UI_NAME: data-store-ui
+        VITE_KEYCLOAK_CLIENT_ID: data-store-ui
+    restart: unless-stopped
+    ports:
+      - "3003:80"
+
+  prov-ui:
+    build:
+      context: .
+      dockerfile: docker/ui/Dockerfile
+      args:
+        <<: *ui-args
+        UI_NAME: prov-ui
+        VITE_KEYCLOAK_CLIENT_ID: provenance-store-ui
+    restart: unless-stopped
+    ports:
+      - "3004:80"
+
+volumes:
+  postgres_data:
+  rustfs_data:
