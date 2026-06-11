@@ -61,6 +61,7 @@ pnpm install
 pnpm keycloak:prepare-realm   # builds docker/keycloak/import/realm.json from the legacy template
 pnpm infra:up                 # postgres + keycloak + rustfs + mailpit
 pnpm db:migrate
+pnpm db:seed                  # optional: demo person/org/model/templates/dataset/model-run
 pnpm dev                      # turbo: API (8080) + worker + 4 UIs (3001-3004)
 ```
 
