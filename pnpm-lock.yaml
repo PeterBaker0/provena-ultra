@@ -8874,7 +8874,7 @@ snapshots:
   registry-auth-token@3.3.2:
     dependencies:
       rc: 1.2.8
-      safe-buffer: 5.1.2
+      safe-buffer: 5.2.1
 
   registry-url@3.1.0:
     dependencies:

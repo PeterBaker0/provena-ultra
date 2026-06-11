@@ -48,6 +48,27 @@ const realm = JSON.parse(content);
  */
 delete realm.defaultRoles; /* replaced by defaultRole composite in modern KC */
 
+/*
+ * Keycloak 25+ no longer includes the `nonce` claim in access tokens, but the
+ * legacy UIs use keycloak-js v21 which validates it there. Keycloak ships a
+ * backwards-compatibility protocol mapper for exactly this case - attach it
+ * to all public (browser) clients.
+ */
+const NONCE_MAPPER = {
+  name: "nonce-backwards-compatible",
+  protocol: "openid-connect",
+  protocolMapper: "oidc-nonce-backwards-compatible-mapper",
+  consentRequired: false,
+  config: { "access.token.claim": "true" },
+};
+for (const client of realm.clients ?? []) {
+  if (!client.publicClient) continue;
+  client.protocolMappers = client.protocolMappers ?? [];
+  if (!client.protocolMappers.some((m) => m.protocolMapper === NONCE_MAPPER.protocolMapper)) {
+    client.protocolMappers.push(structuredClone(NONCE_MAPPER));
+  }
+}
+
 const outDir = join(root, "docker/keycloak/import");
 mkdirSync(outDir, { recursive: true });
 const outPath = join(outDir, "realm.json");

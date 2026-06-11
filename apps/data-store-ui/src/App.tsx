@@ -18,7 +18,12 @@ function App() {
   return (
     <div>
         <QueryClientProvider client={queryClient}>
-          <ReactKeycloakProvider authClient={keycloak}>
+          <ReactKeycloakProvider
+          authClient={keycloak}
+          // checkLoginIframe disabled: third-party-cookie deprecation in modern
+          // browsers breaks the legacy session iframe and silently drops tokens
+          initOptions={{ onLoad: "check-sso", checkLoginIframe: false }}
+        >
             <RoutesAndLayout />
           </ReactKeycloakProvider>
         </QueryClientProvider>
