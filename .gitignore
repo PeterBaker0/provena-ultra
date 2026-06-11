@@ -1,0 +1,25 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs / misc
+*.log
+coverage/
+.DS_Store
+
+# generated keycloak realm (from prepare-realm script)
+docker/keycloak/import/*.json
+
+# local data volumes
+.data/

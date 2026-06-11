@@ -1,0 +1,27 @@
+{
+  "name": "provena-platform",
+  "version": "2.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "db:generate": "pnpm --filter @provena/db db:generate",
+    "db:migrate": "pnpm --filter @provena/db db:migrate",
+    "keycloak:prepare-realm": "node scripts/prepare-realm.mjs",
+    "infra:up": "docker compose -f docker-compose.dev.yml up -d",
+    "infra:down": "docker compose -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "turbo": "^2.5.6",
+    "typescript": "^5.8.3"
+  }
+}
