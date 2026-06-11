@@ -95,6 +95,12 @@ beforeAll(async () => {
     STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT ?? "http://localhost:9000",
     STORAGE_ACCESS_KEY: process.env.STORAGE_ACCESS_KEY ?? "provena-root",
     STORAGE_SECRET_KEY: process.env.STORAGE_SECRET_KEY ?? "provena-secret",
+    /*
+     * Unique bucket per run: the handle sequence restarts with each isolated
+     * test database, while the object store persists - reusing a bucket
+     * would collide with dataset paths from previous runs.
+     */
+    STORAGE_BUCKET: `provena-itest-${Date.now().toString(36)}`,
   });
   await closeDb();
   resetStorageService();
