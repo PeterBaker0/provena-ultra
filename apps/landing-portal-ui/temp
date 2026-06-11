@@ -1,2 +1,0 @@
-import { useKeycloak } from "@react-keycloak/web";
-const { keycloak, initialized } = useKeycloak();
