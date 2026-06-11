@@ -22,7 +22,15 @@ export const buildSearchRouter = (): Hono<AuthEnv> => {
 
   router.get("/search/entity-registry", guards.read, async (c) => {
     const query = c.req.query("query");
-    if (!query) throw badRequest("Missing required query parameter 'query'.");
+    if (query === undefined) throw badRequest("Missing required query parameter 'query'.");
+    /* Legacy parity: an empty query is accepted and yields no results. */
+    if (query.trim() === "") {
+      return c.json({
+        status: successStatus("Found 0 results."),
+        results: [],
+        warnings: null,
+      });
+    }
     const subtypeFilter = (c.req.query("subtype_filter") as ItemSubType | undefined) ?? null;
     const recordLimitRaw = c.req.query("record_limit");
     let limit = DEFAULT_RECORD_LIMIT;
@@ -44,7 +52,14 @@ export const buildSearchRouter = (): Hono<AuthEnv> => {
 
   router.get("/search/global", guards.read, async (c) => {
     const query = c.req.query("query");
-    if (!query) throw badRequest("Missing required query parameter 'query'.");
+    if (query === undefined) throw badRequest("Missing required query parameter 'query'.");
+    if (query.trim() === "") {
+      return c.json({
+        status: successStatus("Found 0 results."),
+        results: [],
+        warnings: null,
+      });
+    }
     const recordLimitRaw = c.req.query("record_limit");
     const limit = recordLimitRaw
       ? Math.min(Number.parseInt(recordLimitRaw, 10) || DEFAULT_RECORD_LIMIT, MAX_RECORD_LIMIT)
