@@ -67,8 +67,11 @@ pnpm dev                      # turbo: API (8080) + worker + 4 UIs (3001-3004)
 - Landing portal: http://localhost:3001 · Registry: http://localhost:3002 ·
   Data store: http://localhost:3003 · Prov store: http://localhost:3004
 - Keycloak: http://localhost:8081 (admin/admin in dev) · MailPit: http://localhost:8025
-- Create dev users via the Keycloak admin console (realm `provena`), assigning the
-  legacy realm roles (`entity-registry-read/write/admin`, `sys-admin-*`, `handle-*`,
+- The realm import seeds two dev users by default (`provena-admin`/`admin` with all
+  Provena roles, `provena-user`/`user` with general registry roles). Set
+  `KC_SEED_DEV_USERS=false` before `pnpm keycloak:prepare-realm` for production, and
+  manage real users via the Keycloak admin console (realm `provena`) using the legacy
+  realm roles (`entity-registry-read/write/admin`, `sys-admin-*`, `handle-*`,
   `job-service-*`).
 
 ## Production (docker compose)
