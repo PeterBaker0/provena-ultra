@@ -1188,6 +1188,12 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+      vite:
+        specifier: ^4.3.6
+        version: 4.5.14(@types/node@20.19.43)(sass@1.101.0)(terser@5.48.0)
+      vite-plugin-svgr:
+        specifier: ^3.2.0
+        version: 3.3.0(rollup@4.61.1)(typescript@5.9.3)(vite@4.5.14(@types/node@20.19.43)(sass@1.101.0)(terser@5.48.0))
 
   packages/storage:
     dependencies:
