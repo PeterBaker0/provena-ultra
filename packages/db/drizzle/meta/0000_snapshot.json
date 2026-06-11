@@ -1,5 +1,5 @@
 {
-  "id": "1d191341-e40a-4d3c-95b7-87582d0cf59f",
+  "id": "09e640d2-2999-4bc1-9f15-c5c358c22e10",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1689,10 +1689,19 @@
       "name": "prov_relation",
       "schema": "public",
       "values": [
+        "wasDerivedFrom",
         "wasInfluencedBy",
+        "wasRevisionOf",
+        "wasQuotedFrom",
+        "hadPrimarySource",
+        "hadMember",
+        "alternateOf",
+        "specializationOf",
         "wasGeneratedBy",
         "used",
+        "wasInvalidatedBy",
         "wasAttributedTo",
+        "wasInformedBy",
         "wasAssociatedWith",
         "actedOnBehalfOf"
       ]

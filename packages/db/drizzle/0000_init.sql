@@ -4,7 +4,7 @@ CREATE TYPE "public"."job_status" AS ENUM('PENDING', 'DEQUEUED', 'IN_PROGRESS', 
 CREATE TYPE "public"."job_sub_type" AS ENUM('PROV_LODGE_WAKE_UP', 'MODEL_RUN_PROV_LODGE', 'MODEL_RUN_LODGE_ONLY', 'MODEL_RUN_BATCH_SUBMIT', 'LODGE_CREATE_ACTIVITY', 'LODGE_VERSION_ACTIVITY', 'MODEL_RUN_UPDATE', 'MODEL_RUN_UPDATE_LODGE_ONLY', 'REGISTRY_WAKE_UP', 'REGISTER_CREATE_ACTIVITY', 'REGISTER_VERSION_ACTIVITY', 'EMAIL_WAKE_UP', 'SEND_EMAIL', 'GENERATE_REPORT');--> statement-breakpoint
 CREATE TYPE "public"."job_type" AS ENUM('PROV_LODGE', 'REGISTRY', 'EMAIL', 'REPORT');--> statement-breakpoint
 CREATE TYPE "public"."lock_action_type" AS ENUM('LOCK', 'UNLOCK');--> statement-breakpoint
-CREATE TYPE "public"."prov_relation" AS ENUM('wasInfluencedBy', 'wasGeneratedBy', 'used', 'wasAttributedTo', 'wasAssociatedWith', 'actedOnBehalfOf');--> statement-breakpoint
+CREATE TYPE "public"."prov_relation" AS ENUM('wasDerivedFrom', 'wasInfluencedBy', 'wasRevisionOf', 'wasQuotedFrom', 'hadPrimarySource', 'hadMember', 'alternateOf', 'specializationOf', 'wasGeneratedBy', 'used', 'wasInvalidatedBy', 'wasAttributedTo', 'wasInformedBy', 'wasAssociatedWith', 'actedOnBehalfOf');--> statement-breakpoint
 CREATE TYPE "public"."record_type" AS ENUM('SEED_ITEM', 'COMPLETE_ITEM');--> statement-breakpoint
 CREATE TYPE "public"."released_status" AS ENUM('NOT_RELEASED', 'PENDING', 'RELEASED');--> statement-breakpoint
 CREATE TYPE "public"."request_status" AS ENUM('PENDING_APPROVAL', 'APPROVED_PENDING_ACTION', 'DENIED_PENDING_DELETION', 'ACTIONED_PENDING_DELETION');--> statement-breakpoint

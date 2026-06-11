@@ -35,3 +35,4 @@ export * as jobSchemas from "./schemas/jobs.js";
 export * as handleSchemas from "./schemas/handle.js";
 
 export * from "./search/searchReady.js";
+export * from "./generated/index.js";

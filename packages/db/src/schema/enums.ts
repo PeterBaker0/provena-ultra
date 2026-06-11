@@ -34,11 +34,21 @@ export const workflowRunCompletionStatusEnum = pgEnum("workflow_run_completion_s
 
 export const lockActionTypeEnum = pgEnum("lock_action_type", ["LOCK", "UNLOCK"]);
 
+/** Full PROV-O relation set supported by the legacy graph (prov_connector.py). */
 export const provRelationEnum = pgEnum("prov_relation", [
+  "wasDerivedFrom",
   "wasInfluencedBy",
+  "wasRevisionOf",
+  "wasQuotedFrom",
+  "hadPrimarySource",
+  "hadMember",
+  "alternateOf",
+  "specializationOf",
   "wasGeneratedBy",
   "used",
+  "wasInvalidatedBy",
   "wasAttributedTo",
+  "wasInformedBy",
   "wasAssociatedWith",
   "actedOnBehalfOf",
 ]);

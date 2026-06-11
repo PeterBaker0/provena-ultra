@@ -131,6 +131,27 @@ export interface CreateCompleteInput {
   updatedTimestamp?: number;
 }
 
+/**
+ * Full item replacement input used by admin import/restore - writes the base
+ * row, satellite and history exactly as provided (timestamps preserved).
+ */
+export interface ReplaceItemInput {
+  id: string;
+  subtype: ItemSubType;
+  category: ItemCategory;
+  ownerUsername: string;
+  recordType: RecordType;
+  createdTimestamp: number;
+  updatedTimestamp: number;
+  domainInfo: DomainInfoObject | null;
+  history: HistoryEntryRecord[];
+  versioningInfo?: VersioningInfoInput | null;
+  workflowLinks?: {
+    create_activity_workflow_id?: string | null;
+    version_activity_workflow_id?: string | null;
+  } | null;
+}
+
 export interface UpdateItemInput {
   id: string;
   domainInfo: DomainInfoObject;
@@ -526,6 +547,54 @@ export const makeItemRepo = (db: Database) => {
     return rows;
   };
 
+  const replaceItem = async (input: ReplaceItemInput): Promise<void> => {
+    await db.transaction(async (tx) => {
+      await tx.delete(item).where(eq(item.id, input.id));
+      const split = input.domainInfo ? splitDomainInfo(input.domainInfo) : null;
+      await tx.insert(item).values({
+        id: input.id,
+        itemCategory: input.category,
+        itemSubType: input.subtype,
+        ownerUsername: input.ownerUsername,
+        createdTimestamp: input.createdTimestamp,
+        updatedTimestamp: input.updatedTimestamp,
+        recordType: input.recordType,
+        displayName: split?.displayName ?? null,
+        userMetadata: split?.userMetadata ?? null,
+        versioningPreviousVersion: input.versioningInfo?.previous_version ?? null,
+        versioningVersion: input.versioningInfo?.version ?? null,
+        versioningReason: input.versioningInfo?.reason ?? null,
+        versioningNextVersion: input.versioningInfo?.next_version ?? null,
+        createActivityWorkflowId: input.workflowLinks?.create_activity_workflow_id ?? null,
+        versionActivityWorkflowId: input.workflowLinks?.version_activity_workflow_id ?? null,
+      });
+      if (split && input.recordType === "COMPLETE_ITEM") {
+        const marshaller = marshallerFor(input.subtype);
+        await tx
+          .insert(marshaller.table)
+          .values({ itemId: input.id, ...marshaller.toRow(split.satellite) } as never);
+      }
+      if (input.history.length > 0) {
+        await tx.insert(itemHistory).values(
+          input.history.map((h) => ({
+            itemId: input.id,
+            historyId: h.id,
+            timestamp: h.timestamp,
+            reason: h.reason,
+            username: h.username,
+            domainInfo: h.item,
+          })),
+        );
+      }
+    });
+    await refreshSearchText(input.id);
+  };
+
+  const countItems = async (): Promise<number> => {
+    const rows = await db.select({ count: sql<number>`count(*)::int` }).from(item);
+    return rows[0]?.count ?? 0;
+  };
+
   return {
     fetchItem,
     createSeedItem,
@@ -541,6 +610,8 @@ export const makeItemRepo = (db: Database) => {
     refreshSearchText,
     searchItems,
     loadHistory,
+    replaceItem,
+    countItems,
   };
 };
 

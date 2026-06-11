@@ -9,10 +9,19 @@ import { provEdge } from "../schema/prov.js";
 import { item } from "../schema/items.js";
 
 export type ProvRelation =
+  | "wasDerivedFrom"
   | "wasInfluencedBy"
+  | "wasRevisionOf"
+  | "wasQuotedFrom"
+  | "hadPrimarySource"
+  | "hadMember"
+  | "alternateOf"
+  | "specializationOf"
   | "wasGeneratedBy"
   | "used"
+  | "wasInvalidatedBy"
   | "wasAttributedTo"
+  | "wasInformedBy"
   | "wasAssociatedWith"
   | "actedOnBehalfOf";
 
