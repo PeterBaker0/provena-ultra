@@ -19,6 +19,13 @@ const configSchema = z.object({
   /** Public base URL of the API (used in emails / report links). */
   API_PUBLIC_URL: z.string().default("http://localhost:8080"),
   CORS_ORIGINS: z.string().default("*"),
+  /**
+   * Browser hostname(s) allowed for CORS (any port). Merged with `PUBLIC_HOST`.
+   * Use for remote VM access, e.g. `adria.it.csiro.au,localhost`.
+   */
+  CORS_ALLOWED_HOSTS: z.string().optional(),
+  /** Public browser hostname (see root `.env` / `pnpm env:public-urls`). */
+  PUBLIC_HOST: z.string().optional(),
 
   /* Database */
   DATABASE_URL: z

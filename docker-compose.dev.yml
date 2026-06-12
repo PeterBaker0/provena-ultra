@@ -12,11 +12,27 @@ services:
       - "8432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-keycloak-db.sql:/docker-entrypoint-initdb.d/init-keycloak-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U provena -d provena"]
       interval: 5s
       timeout: 5s
       retries: 12
+
+  keycloak-db-init:
+    image: postgres:16
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: provena
+      PGPASSWORD: provena
+      PGDATABASE: provena
+    volumes:
+      - ./docker/postgres/ensure-keycloak-db.sh:/ensure-keycloak-db.sh:ro
+    entrypoint: ["/bin/bash", "/ensure-keycloak-db.sh"]
 
   keycloak:
     build:

@@ -12,6 +12,7 @@ const realm = process.env.KC_REALM_NAME ?? process.env.VITE_KEYCLOAK_REALM ?? "p
 
 const urls = {
   PUBLIC_HOST: host,
+  CORS_ALLOWED_HOSTS: host === "localhost" ? "localhost" : `${host},localhost`,
   API_PUBLIC_URL: `${base}:8080`,
   KEYCLOAK_ISSUER: `${base}:8081/realms/${realm}`,
   KEYCLOAK_JWKS_URL: `http://localhost:8081/realms/${realm}/protocol/openid-connect/certs`,

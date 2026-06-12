@@ -24,6 +24,23 @@ services:
       timeout: 5s
       retries: 12
 
+  # First-boot init scripts only run on an empty data volume; this ensures the
+  # keycloak DB exists when reusing postgres_data from infra-only compose.
+  keycloak-db-init:
+    image: postgres:16
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-provena}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-provena}
+      PGDATABASE: ${POSTGRES_DB:-provena}
+    volumes:
+      - ./docker/postgres/ensure-keycloak-db.sh:/ensure-keycloak-db.sh:ro
+    entrypoint: ["/bin/bash", "/ensure-keycloak-db.sh"]
+
   keycloak:
     build:
       context: docker/keycloak
@@ -46,6 +63,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak-db-init:
+        condition: service_completed_successfully
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -75,7 +94,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
       KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
-      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8081/realms/provena/protocol/openid-connect/certs}
+      # Always use the docker network hostname — do not substitute from .env (host dev uses localhost JWKS).
+      KEYCLOAK_JWKS_URL: http://keycloak:8081/realms/provena/protocol/openid-connect/certs
       STORAGE_ENDPOINT: http://rustfs:9000
       STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       SMTP_HOST: ${SMTP_HOST:-mailpit}
@@ -100,7 +120,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
       KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
-      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8081/realms/provena/protocol/openid-connect/certs}
+      # Always use the docker network hostname — do not substitute from .env (host dev uses localhost JWKS).
+      KEYCLOAK_JWKS_URL: http://keycloak:8081/realms/provena/protocol/openid-connect/certs
       STORAGE_ENDPOINT: http://rustfs:9000
       STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       SMTP_HOST: ${SMTP_HOST:-mailpit}

@@ -75,7 +75,10 @@ set, copy into `.env`, then `pnpm keycloak:prepare-realm` and restart dev server
 rebuild UI images for compose). Keep `DATABASE_URL`, `STORAGE_ENDPOINT`, and `SMTP_HOST` on
 `localhost` — only browser-facing URLs need the public hostname. Set `KEYCLOAK_JWKS_URL` to
 `http://localhost:8081/realms/provena/protocol/openid-connect/certs` so the API can fetch
-JWKS from the VM (the public hostname often returns 403 from inside the machine). Forward
+JWKS from the VM (the public hostname often returns 403 from inside the machine). Set
+`CORS_ALLOWED_HOSTS` (and `PUBLIC_HOST`) so the API accepts browser requests from your
+remote hostname on any UI port; Keycloak SPA clients already use `webOrigins: *` in the
+dev realm. Forward
 the usual ports (8001–8004, 8080, 8081, 9000) through SSH or open them on the VM firewall.
 
 Rebuild Keycloak infra only: `pnpm infra:keycloak:rebuild` (prepare realm + image rebuild +
@@ -90,15 +93,23 @@ container recreate). Tear down Keycloak container: `pnpm infra:keycloak:down`.
 ## Production (docker compose)
 
 ```bash
-cp .env.dist .env             # set secrets, public URLs, SMTP
+cp .env.dist .env
+# Set PUBLIC_HOST, CORS_ALLOWED_HOSTS, all VITE_* URLs, KEYCLOAK_PUBLIC_ISSUER
+# (or run `pnpm env:public-urls your.hostname` and copy the output).
+# Change POSTGRES_PASSWORD, STORAGE_SECRET_KEY, KEYCLOAK_ADMIN_PASSWORD; set
+# KC_SEED_DEV_USERS=false before prepare-realm for non-dev deployments.
 pnpm keycloak:prepare-realm
 docker compose up -d --build
 ```
 
 The stack composes Postgres, Keycloak (legacy realm + restrict-client-auth SPI on
-Keycloak 26), RustFS, the API, a dedicated worker, and the four UIs served by nginx.
-Put a reverse proxy (Caddy/Traefik/nginx) in front for TLS + hostnames in real
-deployments, and point the `VITE_*` endpoint vars at the public URLs before building.
+Keycloak 26), RustFS, the API, a dedicated worker, MailPit (SMTP capture), and the
+four UIs served by nginx. Migrations run automatically when the API container starts.
+Optional demo data: `pnpm db:seed` against the compose Postgres (port not exposed by
+default — run from the host with a adjusted `DATABASE_URL` or exec into the API
+container). Put a reverse proxy (Caddy/Traefik/nginx) in front for TLS + hostnames in
+real deployments, and point the `VITE_*` endpoint vars at the public URLs **before**
+building UI images (`docker compose up -d --build` rebuilds when env changes).
 
 ## Object storage options
 

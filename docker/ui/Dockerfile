@@ -40,4 +40,6 @@ FROM nginx:1.27-alpine
 ARG UI_NAME
 COPY docker/ui/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/${UI_NAME}/build /usr/share/nginx/html
+# Vite copies some public/ assets with mode 750; nginx runs as non-root and returns 403.
+RUN chmod -R a+rX /usr/share/nginx/html
 EXPOSE 80

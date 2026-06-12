@@ -24,21 +24,13 @@ import { buildAuthRouter } from "./routers/auth/index.js";
 import { buildSearchRouter } from "./routers/search/index.js";
 import { buildHandleRouter } from "./routers/handle/index.js";
 import { buildJobRouter } from "./routers/job/index.js";
+import { buildCorsMiddlewareOptions } from "./cors.js";
 
 export const buildApp = (): Hono<AuthEnv> => {
   const app = new Hono<AuthEnv>();
   const config = getConfig();
 
-  const origins = config.CORS_ORIGINS.split(",").map((o) => o.trim());
-  app.use(
-    "*",
-    cors({
-      origin: origins.includes("*") ? "*" : origins,
-      credentials: !origins.includes("*"),
-      allowHeaders: ["Authorization", "Content-Type", "X-Requested-With"],
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    }),
-  );
+  app.use("*", cors(buildCorsMiddlewareOptions(config)));
 
   app.onError((error, c) => {
     if (error instanceof ApiError) {
