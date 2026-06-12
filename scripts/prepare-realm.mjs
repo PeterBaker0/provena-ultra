@@ -9,10 +9,17 @@
  *   KC_DISPLAY_NAME  - display name
  *   KC_THEME_NAME    - login theme (default: keycloak built-in)
  *
- * Output: docker/keycloak/import/realm.json (mounted into the compose
- * Keycloak with --import-realm).
+ * Output: docker/keycloak/import/{realm}-realm.json (Keycloak 26 directory
+ * import naming; mounted into compose Keycloak with --import-realm).
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -143,10 +150,16 @@ if (seedDevUsers) {
 }
 
 const outDir = join(root, "docker/keycloak/import");
-const outPath = join(outDir, "realm.json");
+const outPath = join(outDir, `${REALM_NAME}-realm.json`);
+const legacyPath = join(outDir, "realm.json");
 try {
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(outPath, JSON.stringify(realm, null, 2));
+  mkdirSync(outDir, { recursive: true, mode: 0o755 });
+  writeFileSync(outPath, JSON.stringify(realm, null, 2), { mode: 0o644 });
+  chmodSync(outDir, 0o755);
+  chmodSync(outPath, 0o644);
+  if (existsSync(legacyPath)) {
+    unlinkSync(legacyPath);
+  }
 } catch (error) {
   if (error && (error.code === "EACCES" || error.code === "EPERM")) {
     console.error(

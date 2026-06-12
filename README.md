@@ -58,7 +58,7 @@ Postgres 16 + an S3/STS store.
 ```bash
 cp .env.dist .env
 pnpm install
-pnpm keycloak:prepare-realm   # builds docker/keycloak/import/realm.json from the legacy template
+pnpm keycloak:prepare-realm   # builds docker/keycloak/import/provena-realm.json from the legacy template
 pnpm infra:up                 # postgres + keycloak + rustfs + mailpit
 pnpm db:migrate
 pnpm db:seed                  # optional: demo person/org/model/templates/dataset/model-run
