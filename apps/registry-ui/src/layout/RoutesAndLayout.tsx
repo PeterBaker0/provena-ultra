@@ -69,6 +69,9 @@ const useStyles = makeStyles((theme: DefaultTheme) =>
       zIndex: theme.zIndex.drawer + 1,
       color: "white",
     },
+    appHeader: {
+      color: "white",
+    },
     routerButtonDefault: {
       color: "white",
       height: 64,
@@ -142,7 +145,7 @@ function RoutesAndLayout() {
         />
       </Drawer>
       <AppBar position="fixed" className={classes.appBar}>
-        <Container>
+        <Container maxWidth={false}>
           <Toolbar>
             <Stack
               direction="row"
@@ -159,7 +162,7 @@ function RoutesAndLayout() {
                   <Typography
                     variant="h6"
                     component="div"
-                    className={classes.appBar}
+                    className={classes.appHeader}
                   >
                     {themeConfig.currentPageThemeConfig.appBarTitle}
                   </Typography>
@@ -170,7 +173,11 @@ function RoutesAndLayout() {
                 alignItems="center"
                 divider={<Divider orientation="vertical" flexItem />}
               >
-                <Button href="/records" className={classes.routerButtonDefault}>
+                <Button
+                  component={RouterLink}
+                  to="/records"
+                  className={classes.routerButtonDefault}
+                >
                   Explore Registry
                 </Button>
                 <Button
@@ -201,7 +208,7 @@ function RoutesAndLayout() {
         </Container>
       </AppBar>
       <div className={classes.root}>
-        <Container className={classes.container}>
+        <Container maxWidth={false} className={classes.container}>
           <Switch>
             <Route exact path="/" component={Frontmatter} />
             <ProtectedRoute path="/registerentity">

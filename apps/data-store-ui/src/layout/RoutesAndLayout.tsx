@@ -147,7 +147,7 @@ function RoutesAndLayout() {
         <SideNavBox navListItems={SIDE_NAV_LIST_ITEMS} />
       </Drawer>
       <AppBar position="fixed" className={classes.appBar}>
-        <Container>
+        <Container maxWidth={false}>
           <Toolbar>
             <Stack
               direction="row"
@@ -219,7 +219,7 @@ function RoutesAndLayout() {
         </Container>
       </AppBar>
       <div className={classes.root}>
-        <Container className={classes.container}>
+        <Container maxWidth={false} className={classes.container}>
           <Switch>
             <Route exact path="/" component={Frontmatter} />
             <ProtectedRoute exact path="/datasets">

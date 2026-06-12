@@ -188,11 +188,13 @@ export const generateTheme = (scssModule: CSSModuleClasses): Theme =>
           },
         },
       },
-      // Disable default maxWidth
+      // Disable default maxWidth (theme defaultProps alone is unreliable in prod builds)
       MuiContainer: {
         defaultProps: {
           maxWidth: false,
-          sx: {
+        },
+        styleOverrides: {
+          root: {
             width: "90%",
           },
         },

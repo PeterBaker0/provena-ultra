@@ -1,17 +1,6 @@
-// Default Scss Config
+// Default Scss Config (CSS module exports for JS theme generation)
 
-$color_primary: #004B87;
-$color_secondary: #009ae5;
-
-$color_deep_gray: #323335;
-$color_gray: #7c7c7c;
-$color_light_gray: #dedfe1;
-
-$a_color: #004B87;
-
-$font_family: "Open Sans", Sans-serif;
-$font_color: #575757;
-$font_size: 14;
+@import "./_variables.scss";
 
 // Material UI variables
 :export {
