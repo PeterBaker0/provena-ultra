@@ -1,31 +1,46 @@
 {
   "name": "@provena/api",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "main": "dist/main.js",
-  "types": "dist/main.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo 'No lint configured for @provena/api'",
-    "test": "echo 'No tests for @provena/api'"
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.5",
+    "@hono/node-server": "^1.14.0",
     "@provena/auth": "workspace:*",
     "@provena/config": "workspace:*",
-    "@provena/contracts": "workspace:*",
     "@provena/db": "workspace:*",
-    "@provena/observability": "workspace:*",
-    "@provena/queue": "workspace:*",
-    "@provena/search": "workspace:*",
+    "@provena/email": "workspace:*",
+    "@provena/interfaces": "workspace:*",
+    "@provena/jobs": "workspace:*",
     "@provena/storage": "workspace:*",
-    "drizzle-orm": "^0.44.7",
-    "hono": "^4.10.2"
+    "csv-parse": "^5.6.0",
+    "csv-stringify": "^6.5.2",
+    "docx": "^9.4.0",
+    "hono": "^4.7.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
-    "tsx": "^4.20.6"
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.0"
   }
 }

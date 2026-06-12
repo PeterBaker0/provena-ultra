@@ -1,12 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "references": [{ "path": "../config" }]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.itest.ts"]
 }

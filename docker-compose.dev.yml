@@ -1,0 +1,58 @@
+# Infrastructure-only stack for local development:
+#   cp .env.dist .env && pnpm infra:up && pnpm db:migrate && pnpm dev
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: provena
+      POSTGRES_USER: provena
+      POSTGRES_PASSWORD: provena
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U provena -d provena"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  keycloak:
+    build:
+      context: docker/keycloak
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+    command: ["start-dev", "--http-port=8081", "--import-realm"]
+    volumes:
+      # produced by `pnpm keycloak:prepare-realm`
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
+    ports:
+      - "8081:8081"
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: provena-root
+      RUSTFS_SECRET_KEY: provena-secret
+    command: ["--address", "0.0.0.0:9000", "/data"]
+    volumes:
+      - rustfs_data:/data
+    ports:
+      - "9000:9000"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
+volumes:
+  postgres_data:
+  rustfs_data:

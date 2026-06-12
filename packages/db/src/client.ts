@@ -1,33 +1,37 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { getEnv } from "@provena/config";
-import * as schema from "./schema";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import { getConfig } from "@provena/config";
+import * as schema from "./schema/index.js";
 
-let pool: Pool | undefined;
+export type Database = NodePgDatabase<typeof schema>;
 
-const createPool = (): Pool => {
-  const env = getEnv();
+let pool: pg.Pool | undefined;
+let db: Database | undefined;
 
-  return new Pool({
-    connectionString: env.DATABASE_URL,
-    ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : false,
-  });
-};
-
-export const getDb = () => {
+export const getPool = (): pg.Pool => {
   if (!pool) {
-    pool = createPool();
+    pool = new pg.Pool({ connectionString: getConfig().DATABASE_URL, max: 10 });
   }
-
-  return drizzle(pool, { schema });
+  return pool;
 };
 
-export type DbClient = ReturnType<typeof getDb>;
-export type ProvenaDatabase = DbClient;
+export const getDb = (): Database => {
+  if (!db) {
+    db = drizzle(getPool(), { schema });
+  }
+  return db;
+};
+
+/** Create an isolated client/db pair (used by tests and the migrator). */
+export const createDb = (
+  connectionString: string,
+): { db: Database; pool: pg.Pool } => {
+  const isolatedPool = new pg.Pool({ connectionString, max: 5 });
+  return { db: drizzle(isolatedPool, { schema }), pool: isolatedPool };
+};
 
 export const closeDb = async (): Promise<void> => {
-  if (pool) {
-    await pool.end();
-    pool = undefined;
-  }
+  await pool?.end();
+  pool = undefined;
+  db = undefined;
 };

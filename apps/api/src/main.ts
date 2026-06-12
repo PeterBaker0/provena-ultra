@@ -1,68 +1,48 @@
-import { randomUUID } from "node:crypto";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
+/**
+ * API entrypoint - serves the monolithic Hono app and (by default) embeds
+ * the background job worker in-process.
+ */
 import { serve } from "@hono/node-server";
-import { getEnv } from "@provena/config";
-import { createLogger } from "@provena/observability";
-import { optionalAuthMiddleware } from "@provena/auth";
-import type { ApiBindings } from "./types";
-import { buildServices } from "./services";
-import { registerAllRoutes } from "./routes";
+import { getConfig } from "@provena/config";
+import { runMigrations } from "@provena/db";
+import { startWorker } from "@provena/jobs";
+import { getStorageService } from "@provena/storage";
+import { buildApp } from "./app.js";
+import { registerAllJobHandlers } from "./services/jobHandlers.js";
 
-const env = getEnv();
-const logger = createLogger(env.LOG_LEVEL);
-const runtime = buildServices(logger);
-const { db, queue, storage, services } = runtime;
-void queue.start().catch((error) => {
-  logger.error("Failed to start queue service", {
-    error: error instanceof Error ? error.message : "unknown",
+const main = async (): Promise<void> => {
+  const config = getConfig();
+
+  /* Apply migrations on boot (idempotent). */
+  try {
+    await runMigrations();
+    console.log("[api] database migrations applied");
+  } catch (error) {
+    console.error("[api] migration failure:", error);
+    throw error;
+  }
+
+  /* Bootstrap the storage bucket (best effort - storage may start later). */
+  try {
+    await getStorageService().ensureBucket();
+    console.log("[api] storage bucket ready");
+  } catch (error) {
+    console.warn("[api] storage bootstrap failed (continuing):", (error as Error).message);
+  }
+
+  registerAllJobHandlers();
+  if (config.WORKER_EMBEDDED) {
+    await startWorker();
+    console.log("[api] embedded job worker started");
+  }
+
+  const app = buildApp();
+  serve({ fetch: app.fetch, port: config.API_PORT }, (info) => {
+    console.log(`[api] listening on http://localhost:${info.port}`);
   });
+};
+
+main().catch((error) => {
+  console.error("[api] fatal startup error:", error);
+  process.exit(1);
 });
-
-const app = new Hono<ApiBindings>();
-
-app.use("*", async (c, next) => {
-  c.set("requestId", randomUUID());
-  c.set("logger", logger);
-  c.set("db", db);
-  c.set("queue", queue);
-  c.set("storage", storage);
-  c.set("services", services);
-  await next();
-});
-
-app.use(
-  "*",
-  cors({
-    origin: env.CORS_ORIGIN_LIST,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
-    credentials: true,
-  }),
-);
-app.use("*", optionalAuthMiddleware);
-
-registerAllRoutes(app);
-
-app.get("/", (c) =>
-  c.json({
-    message: "Health check successful.",
-  }),
-);
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  serve(
-    {
-      fetch: app.fetch,
-      port: env.API_PORT,
-      hostname: "0.0.0.0",
-    },
-    () => {
-      logger.info("api_server_started", {
-        port: env.API_PORT,
-      });
-    },
-  );
-}
-
-export default app;

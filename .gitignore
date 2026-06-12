@@ -1,11 +1,27 @@
-node_modules
-dist
-build
-.turbo
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+
+# env
 .env
 .env.local
-coverage
+.env.*.local
+
+# logs / misc
 *.log
-*.tsbuildinfo
-drizzle
-docker/keycloak/import/DEV-realm.json
+coverage/
+.DS_Store
+
+# generated keycloak realm (from prepare-realm script)
+# the directory itself is committed (.gitkeep) so Docker bind mounts never
+# create it root-owned before the prepare-realm script runs
+docker/keycloak/import/*.json
+
+# local data volumes
+.data/

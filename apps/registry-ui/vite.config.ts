@@ -1,38 +1,20 @@
-import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
-import { viteMergedEnvDefine } from "../../scripts/vite-merged-env-define";
 
-export default defineConfig(({ mode }) => ({
-  envDir: path.resolve(__dirname, "../.."),
-  define: viteMergedEnvDefine(mode, __dirname),
-  resolve: {
-    dedupe: [
-      "react",
-      "react-dom",
-      "react-router",
-      "react-router-dom",
-      "history",
-      "@mui/material",
-      "@mui/system",
-      "@mui/utils",
-      "@emotion/react",
-      "@emotion/styled",
-      "prop-types",
-      "tiny-warning",
-      "tiny-invariant",
-      "@babel/runtime",
-      "hoist-non-react-statics",
-      "react-is",
-      "path-to-regexp",
-      "resolve-pathname",
-      "value-equal",
-      "@tanstack/query-core",
-    ],
+// https://vitejs.dev/config/
+export default defineConfig({
+  // Single repo-root .env feeds all UIs (VITE_* vars only)
+  envDir: "../../",
+  // Per-app Keycloak client id (legacy realm client), overridable via env.
+  define: {
+    "import.meta.env.VITE_KEYCLOAK_CLIENT_ID": JSON.stringify(
+      process.env.VITE_KEYCLOAK_CLIENT_ID_REGISTRY ?? process.env.VITE_KEYCLOAK_CLIENT_ID ?? "entity-registry-ui",
+    ),
   },
+
   plugins: [
     react(),
     viteTsconfigPaths(),
@@ -46,22 +28,6 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     open: false,
-    host: true,
-    port: 3002,
+    port: 3000,
   },
-  optimizeDeps: {
-    include: [
-      "react-router",
-      "react-router-dom",
-      "history",
-      "prop-types",
-      "tiny-warning",
-      "tiny-invariant",
-      "loose-envify",
-      "@babel/runtime/helpers/esm/inheritsLoose",
-      "@babel/runtime/helpers/esm/extends",
-      "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose",
-      "@tanstack/query-core",
-    ],
-  },
-}));
+});

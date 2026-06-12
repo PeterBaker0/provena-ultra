@@ -1,0 +1,28 @@
+{
+  "name": "@provena/jobs",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@provena/config": "workspace:*",
+    "@provena/db": "workspace:*",
+    "@provena/interfaces": "workspace:*",
+    "pg-boss": "^10.3.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.0"
+  }
+}

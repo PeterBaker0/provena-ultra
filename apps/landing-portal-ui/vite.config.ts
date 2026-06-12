@@ -1,43 +1,20 @@
-import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
-import { viteMergedEnvDefine } from "../../scripts/vite-merged-env-define";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  envDir: path.resolve(__dirname, "../.."),
-  define: viteMergedEnvDefine(mode, __dirname),
-  resolve: {
-    dedupe: [
-      "react",
-      "react-dom",
-      "react-router",
-      "react-router-dom",
-      "history",
-      "@mui/material",
-      "@mui/system",
-      "@mui/utils",
-      "@emotion/react",
-      "@emotion/styled",
-      "prop-types",
-      "tiny-warning",
-      "tiny-invariant",
-      "@babel/runtime",
-      "hoist-non-react-statics",
-      "react-is",
-      "path-to-regexp",
-      "resolve-pathname",
-      "value-equal",
-      "query-string",
-      "strict-uri-encode",
-      "decode-uri-component",
-      "filter-obj",
-      "split-on-first",
-    ],
+export default defineConfig({
+  // Single repo-root .env feeds all UIs (VITE_* vars only)
+  envDir: "../../",
+  // Per-app Keycloak client id (legacy realm client), overridable via env.
+  define: {
+    "import.meta.env.VITE_KEYCLOAK_CLIENT_ID": JSON.stringify(
+      process.env.VITE_KEYCLOAK_CLIENT_ID_LANDING ?? process.env.VITE_KEYCLOAK_CLIENT_ID ?? "landing-portal-ui",
+    ),
   },
+
   plugins: [
     react(),
     viteTsconfigPaths(),
@@ -50,11 +27,9 @@ export default defineConfig(({ mode }) => ({
     outDir: "build",
   },
   server: {
+    // Never auto-open a browser: spawning xdg-open crashes the dev server on
+    // headless machines / WSL / containers where it doesn't exist.
     open: false,
-    host: true,
-    port: 3005,
+    port: 3000,
   },
-  optimizeDeps: {
-    include: ["react-router", "react-router-dom", "history", "tiny-warning", "tiny-invariant"],
-  },
-}));
+});
