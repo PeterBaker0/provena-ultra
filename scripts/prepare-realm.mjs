@@ -143,7 +143,29 @@ if (seedDevUsers) {
 }
 
 const outDir = join(root, "docker/keycloak/import");
-mkdirSync(outDir, { recursive: true });
 const outPath = join(outDir, "realm.json");
-writeFileSync(outPath, JSON.stringify(realm, null, 2));
+try {
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(outPath, JSON.stringify(realm, null, 2));
+} catch (error) {
+  if (error && (error.code === "EACCES" || error.code === "EPERM")) {
+    console.error(
+      [
+        `Permission denied writing ${outPath}.`,
+        "",
+        "This usually happens when `docker compose up` ran before this script:",
+        "Docker creates missing bind-mount directories owned by root, so your",
+        "user can no longer write into docker/keycloak/import.",
+        "",
+        "Fix it with ONE of:",
+        `  sudo chown -R "$USER" ${outDir}`,
+        `  sudo rm -rf ${outDir}    # it will be recreated by this script`,
+        "",
+        "then re-run: pnpm keycloak:prepare-realm",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
+  throw error;
+}
 console.log(`Wrote ${outPath} (realm '${REALM_NAME}', theme '${THEME_NAME}')`);

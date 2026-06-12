@@ -19,6 +19,8 @@ coverage/
 .DS_Store
 
 # generated keycloak realm (from prepare-realm script)
+# the directory itself is committed (.gitkeep) so Docker bind mounts never
+# create it root-owned before the prepare-realm script runs
 docker/keycloak/import/*.json
 
 # local data volumes
