@@ -27,7 +27,9 @@ export default defineConfig({
     outDir: "build",
   },
   server: {
-    open: true,
+    // Never auto-open a browser: spawning xdg-open crashes the dev server on
+    // headless machines / WSL / containers where it doesn't exist.
+    open: false,
     port: 3000,
   },
 });
