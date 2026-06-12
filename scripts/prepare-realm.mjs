@@ -26,7 +26,8 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const REALM_NAME = process.env.KC_REALM_NAME ?? "provena";
-const ROOT_DOMAIN = process.env.KC_ROOT_DOMAIN ?? "localhost";
+const ROOT_DOMAIN =
+  process.env.KC_ROOT_DOMAIN ?? process.env.PUBLIC_HOST ?? "localhost";
 const DISPLAY_NAME = process.env.KC_DISPLAY_NAME ?? "Provena";
 const THEME_NAME = process.env.KC_THEME_NAME ?? "keycloak";
 

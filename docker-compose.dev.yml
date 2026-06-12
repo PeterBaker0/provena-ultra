@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: provena
       POSTGRES_PASSWORD: provena
     ports:
-      - "5432:5432"
+      - "8432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -50,7 +50,7 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "1025:1025" # SMTP
+      - "8125:1025" # SMTP
       - "8025:8025" # Web UI
 
 volumes:

@@ -23,7 +23,7 @@ const configSchema = z.object({
   /* Database */
   DATABASE_URL: z
     .string()
-    .default("postgres://provena:provena@localhost:5432/provena"),
+    .default("postgres://provena:provena@localhost:8432/provena"),
 
   /* Keycloak */
   /** Full realm issuer URL, e.g. https://auth.example.com/realms/provena */
@@ -62,7 +62,7 @@ const configSchema = z.object({
 
   /* Email */
   SMTP_HOST: z.string().default("localhost"),
-  SMTP_PORT: z.coerce.number().int().default(1025),
+  SMTP_PORT: z.coerce.number().int().default(8125),
   SMTP_SECURE: boolString.default(false),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),

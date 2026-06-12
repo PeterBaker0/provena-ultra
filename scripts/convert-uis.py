@@ -15,10 +15,10 @@ LIB_PKG = json.loads(
 )
 
 UI_PORTS = {
-    "landing-portal-ui": 3001,
-    "registry-ui": 3002,
-    "data-store-ui": 3003,
-    "prov-ui": 3004,
+    "landing-portal-ui": 8001,
+    "registry-ui": 8002,
+    "data-store-ui": 8003,
+    "prov-ui": 8004,
 }
 
 for ui, port in UI_PORTS.items():

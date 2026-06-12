@@ -63,7 +63,7 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "1025:1025"
+      - "8125:1025"
       - "8025:8025"
 
   api:
@@ -75,10 +75,11 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
       KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8081/realms/provena/protocol/openid-connect/certs}
       STORAGE_ENDPOINT: http://rustfs:9000
       STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_PORT: "1025"
       WORKER_EMBEDDED: "false"
       API_PORT: 8080
     ports:
@@ -99,10 +100,11 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-provena}:${POSTGRES_PASSWORD:-provena}@postgres:5432/${POSTGRES_DB:-provena}
       KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_ISSUER:-http://keycloak:8081/realms/provena}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8081/realms/provena/protocol/openid-connect/certs}
       STORAGE_ENDPOINT: http://rustfs:9000
       STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_PORT: "1025"
     depends_on:
       postgres:
         condition: service_healthy
@@ -134,7 +136,7 @@ services:
         VITE_KEYCLOAK_CLIENT_ID: landing-portal-ui
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "8001:80"
 
   registry-ui:
     build:
@@ -146,7 +148,7 @@ services:
         VITE_KEYCLOAK_CLIENT_ID: entity-registry-ui
     restart: unless-stopped
     ports:
-      - "3002:80"
+      - "8002:80"
 
   data-store-ui:
     build:
@@ -158,7 +160,7 @@ services:
         VITE_KEYCLOAK_CLIENT_ID: data-store-ui
     restart: unless-stopped
     ports:
-      - "3003:80"
+      - "8003:80"
 
   prov-ui:
     build:
@@ -170,7 +172,7 @@ services:
         VITE_KEYCLOAK_CLIENT_ID: provenance-store-ui
     restart: unless-stopped
     ports:
-      - "3004:80"
+      - "8004:80"
 
 volumes:
   postgres_data:

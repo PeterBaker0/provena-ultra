@@ -30,6 +30,8 @@ export default defineConfig({
     // Never auto-open a browser: spawning xdg-open crashes the dev server on
     // headless machines / WSL / containers where it doesn't exist.
     open: false,
-    port: 3000,
+    host: true,
+    allowedHosts: true,
+    port: 8001,
   },
 });

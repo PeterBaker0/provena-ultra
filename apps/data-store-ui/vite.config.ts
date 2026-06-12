@@ -28,6 +28,8 @@ export default defineConfig({
   },
   server: {
     open: false,
-    port: 3000,
+    host: true,
+    allowedHosts: true,
+    port: 8003,
   },
 });

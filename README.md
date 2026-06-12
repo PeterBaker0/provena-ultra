@@ -62,12 +62,24 @@ pnpm keycloak:prepare-realm   # builds docker/keycloak/import/provena-realm.json
 pnpm infra:up                 # postgres + keycloak + rustfs + mailpit
 pnpm db:migrate
 pnpm db:seed                  # optional: demo person/org/model/templates/dataset/model-run
-pnpm dev                      # turbo: API (8080) + worker + 4 UIs (3001-3004)
+pnpm dev                      # turbo: API (8080) + worker + 4 UIs (8001-8004)
 ```
 
-- Landing portal: http://localhost:3001 · Registry: http://localhost:3002 ·
-  Data store: http://localhost:3003 · Prov store: http://localhost:3004
+- Landing portal: http://localhost:8001 · Registry: http://localhost:8002 ·
+  Data store: http://localhost:8003 · Prov store: http://localhost:8004
 - Keycloak: http://localhost:8081 (admin/admin in dev) · MailPit: http://localhost:8025
+
+**Remote VM / SSH port-forward:** set `PUBLIC_HOST` in `.env` to the hostname you use in
+the browser (e.g. `adria.it.csiro.au`), run `pnpm env:public-urls` to print the full URL
+set, copy into `.env`, then `pnpm keycloak:prepare-realm` and restart dev servers (or
+rebuild UI images for compose). Keep `DATABASE_URL`, `STORAGE_ENDPOINT`, and `SMTP_HOST` on
+`localhost` — only browser-facing URLs need the public hostname. Set `KEYCLOAK_JWKS_URL` to
+`http://localhost:8081/realms/provena/protocol/openid-connect/certs` so the API can fetch
+JWKS from the VM (the public hostname often returns 403 from inside the machine). Forward
+the usual ports (8001–8004, 8080, 8081, 9000) through SSH or open them on the VM firewall.
+
+Rebuild Keycloak infra only: `pnpm infra:keycloak:rebuild` (prepare realm + image rebuild +
+container recreate). Tear down Keycloak container: `pnpm infra:keycloak:down`.
 - The realm import seeds two dev users by default (`provena-admin`/`admin` with all
   Provena roles, `provena-user`/`user` with general registry roles). Set
   `KC_SEED_DEV_USERS=false` before `pnpm keycloak:prepare-realm` for production, and

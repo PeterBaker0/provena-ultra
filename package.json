@@ -16,8 +16,11 @@
     "db:generate": "pnpm --filter @provena/db db:generate",
     "db:migrate": "pnpm --filter @provena/db db:migrate",
     "keycloak:prepare-realm": "node scripts/prepare-realm.mjs",
+    "env:public-urls": "node scripts/print-public-urls.mjs",
     "infra:up": "docker compose -f docker-compose.dev.yml up -d",
     "infra:down": "docker compose -f docker-compose.dev.yml down",
+    "infra:keycloak:rebuild": "pnpm keycloak:prepare-realm && docker compose -f docker-compose.dev.yml build keycloak --no-cache && docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak",
+    "infra:keycloak:down": "docker compose -f docker-compose.dev.yml stop keycloak && docker compose -f docker-compose.dev.yml rm -f keycloak",
     "db:seed": "pnpm --filter @provena/api seed"
   },
   "devDependencies": {

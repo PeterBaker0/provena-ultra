@@ -54,10 +54,10 @@
         "history": "^4.10.1"
     },
     "scripts": {
-        "dev": "vite --port 3002",
+        "dev": "vite --port 8002",
         "build": "tsc && vite build",
         "typecheck": "tsc --noEmit",
-        "preview": "vite preview --port 3002"
+        "preview": "vite preview --port 8002"
     },
     "eslintConfig": {
         "extends": [

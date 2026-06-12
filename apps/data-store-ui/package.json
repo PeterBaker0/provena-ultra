@@ -71,10 +71,10 @@
         "history": "^4.10.1"
     },
     "scripts": {
-        "dev": "vite --port 3003",
+        "dev": "vite --port 8003",
         "build": "tsc && vite build",
         "typecheck": "tsc --noEmit",
-        "preview": "vite preview --port 3003"
+        "preview": "vite preview --port 8003"
     },
     "eslintConfig": {
         "extends": [

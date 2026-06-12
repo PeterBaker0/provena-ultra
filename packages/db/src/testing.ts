@@ -8,7 +8,7 @@ import { createDb, type Database } from "./client.js";
 import { runMigrations } from "./migrate.js";
 
 const ADMIN_URL =
-  process.env.TEST_ADMIN_DATABASE_URL ?? "postgres://provena:provena@localhost:5432/provena";
+  process.env.TEST_ADMIN_DATABASE_URL ?? "postgres://provena:provena@localhost:8432/provena";
 
 export interface TestDatabase {
   db: Database;
